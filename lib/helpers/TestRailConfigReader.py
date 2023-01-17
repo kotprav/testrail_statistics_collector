@@ -1,9 +1,14 @@
+import os
+
 import yaml
 
+from path_constants import CONFIGS_DIR_PATH
 
-class TestRailConfig:
+
+class TestRailConfigReader:
     def __init__(self):
-        with open("configs/test-rail-config.yaml", "r") as stream:
+        with open(os.path.join(CONFIGS_DIR_PATH, "test-rail-config.yaml"),
+                  "r") as stream:
             try:
                 self.__config = yaml.load(stream, Loader=yaml.FullLoader)["testrail"]
             except yaml.YAMLError as exc:
@@ -20,7 +25,7 @@ class TestRailConfig:
     @property
     def api_address(self):
         return self.__config["api_address"]
-    
+
     @property
     def server_address(self):
         return self.__config["server_address"]

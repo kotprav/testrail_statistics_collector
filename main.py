@@ -1,4 +1,4 @@
-from api_requests import ApiRequests
+from lib.api_requests import ApiRequests
 
 get_test_cases_count, get_runs_count = True, True
 get_never_executed_test_cases = False

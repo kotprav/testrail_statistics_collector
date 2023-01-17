@@ -1,4 +1,4 @@
-from config_reader import TestRailConfig
+from lib.helpers.TestRailConfigReader import TestRailConfigReader
 
 
 class TestCase:
@@ -23,6 +23,6 @@ class TestCase:
 
     @property
     def link(self):
-        test_rail_config = TestRailConfig()
+        test_rail_config = TestRailConfigReader()
 
         return f"{test_rail_config.server_address}/index.php?/cases/view/{self.id}"
