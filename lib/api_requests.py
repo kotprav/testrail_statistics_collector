@@ -6,7 +6,7 @@ from collections import Counter
 
 import requests
 
-from lib.helpers.TestRailConfigReader import TestRailConfigReader
+from lib.helpers.test_rail_config_reader import TestRailConfigReader
 from lib.test_case import TestCase
 from lib.test_in_run import TestInRun
 from lib.test_run import TestRun

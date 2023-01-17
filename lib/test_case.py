@@ -1,4 +1,4 @@
-from lib.helpers.TestRailConfigReader import TestRailConfigReader
+from lib.helpers.test_rail_config_reader import TestRailConfigReader
 
 
 class TestCase:
