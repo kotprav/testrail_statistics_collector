@@ -3,6 +3,7 @@ from lib.api_requests import ApiRequests
 get_test_cases_count, get_runs_count = True, True
 get_never_executed_test_cases = False
 get_most_failing_test_cases = False
+get_the_buggiest_test_cases = True
 
 api_requests = ApiRequests()
 
@@ -17,5 +18,8 @@ if get_never_executed_test_cases:
 
 if get_most_failing_test_cases:
     api_requests.get_most_failing_test_cases()
+
+if get_the_buggiest_test_cases:
+    api_requests.get_the_buggiest_test_cases()
 
 pass
