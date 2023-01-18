@@ -7,7 +7,7 @@ class TestCase:
 
     @property
     def id(self):
-        return self.__info["id"]
+        return self.__info["id"] or 0
 
     @property
     def is_deleted(self):
