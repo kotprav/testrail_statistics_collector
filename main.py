@@ -1,11 +1,11 @@
-from lib.api_requests import ApiRequests
+from lib.tool_api import ToolApi
 
 get_test_cases_count, get_runs_count = True, True
 get_never_executed_test_cases = True
 get_most_failing_test_cases = False
 get_the_buggiest_test_cases = False
 
-api_requests = ApiRequests()
+api_requests = ToolApi()
 
 if get_test_cases_count:
     print(f"Test cases count: {len(api_requests.cases)}")
