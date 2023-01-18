@@ -9,3 +9,7 @@ class TestInRun:
     @property
     def case_id(self):
         return self.__req_object["case_id"]
+
+    @property
+    def full_info(self):
+        return {"id": self.test_id, "case_id": self.case_id}

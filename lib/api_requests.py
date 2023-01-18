@@ -7,7 +7,8 @@ from collections import Counter
 import requests
 
 from lib.helpers.cache_config_reader import CacheConfigReader
-from lib.helpers.file_helper import read_list_of_dicts_from_file, write_list_of_dicts_to_file
+from lib.helpers.file_helper import read_list_of_dicts_from_file, write_list_of_dicts_to_file, write_list_to_file, \
+    read_list_from_file
 from lib.helpers.test_rail_config_reader import TestRailConfigReader
 from lib.test_rail_objects.test_case import TestCase
 from lib.test_rail_objects.test_in_run import TestInRun
@@ -26,21 +27,16 @@ class ApiRequests:
 
     @property
     def cases(self):
-        """Gets information about test cases only the first time during the script execution.
-        """
         return self.__get_cases()
 
     @property
     def runs(self):
-        """Gets information about test runs only the first time during the script execution.
-        """
         return self.__get_runs()
 
     def get_not_executed_cases_list(self):
         print("Getting never executed test cases...")
         cases_ids = set([case.id for case in self.cases])
-        executed_cases_list, executed_cases_set = self.get_executed_cases_list()
-
+        executed_cases_set = self.get_executed_cases_list()
         executed_cases_ids_set = set([case.id for case in executed_cases_set])
 
         if len(executed_cases_ids_set) > len(cases_ids):
@@ -48,31 +44,44 @@ class ApiRequests:
         else:
             not_executed_cases_ids_list = list(cases_ids - executed_cases_ids_set)
 
-        cases_list = self.__get_cases_list_from_cached_list(not_executed_cases_ids_list)
+        cases_list = self.__get_test_cases_list_by_id_list(not_executed_cases_ids_list)
         output_file_name = os.path.join(OUTPUT_FILES_DIR_PATH, "never_executed_test_cases.txt")
 
-        with open(output_file_name, 'w') as f:
-            for test_case in cases_list:
-                f.write(f"{test_case.title} {test_case.link}")
+        write_list_of_dicts_to_file(output_file_name,
+                                    [f"{test_case.title} {test_case.link}" for test_case in cases_list])
 
         print(f"Finished! Please check {output_file_name} file")
+
+    def __get_test_cases_list_by_id_list(self, id_list):
+        return [case for case in self.cases if case.id in id_list]
 
     def get_cases_execution_stats(self):
         executed_cases_list, executed_cases_set = self.get_executed_cases_list()
         return Counter(executed_cases_list)
 
     def get_executed_cases_list(self):
+        """
+
+        :return: TestCase[]
+        """
+        cached_file_name = os.path.join(CACHED_INFO_DIR_PATH, "cached_tests_in_runs.txt")
         executed_case_ids_list = []
 
-        for run in self.runs:
-            case_id_in_run_list = [test.case_id for test in self.__get_tests_in_run(run.id)]
-            executed_case_ids_list = executed_case_ids_list + case_id_in_run_list
+        if self.__cache_config.use_cached_tests_in_runs:
+            executed_case_ids_list = [int(case_id) for case_id in
+                                      read_list_from_file(cached_file_name)]
 
-        executed_case_ids_set = set(executed_case_ids_list)
-        executed_cases_list, executed_cases_set = self.__get_cases_list_from_cached_list(
-            executed_case_ids_list), self.__get_cases_list_from_cached_list(executed_case_ids_set)
+        if not executed_case_ids_list:
+            for run in self.runs:
+                case_id_in_run_list = [test.case_id for test in self.__get_tests_in_run(run.id)]
+                executed_case_ids_list = executed_case_ids_list + case_id_in_run_list
 
-        return executed_cases_list, executed_cases_set
+            write_list_to_file(cached_file_name, executed_case_ids_list)
+            print(f"Information about all tests in test runs is saved to {cached_file_name} file")
+
+        executed_cases_set = self.__get_test_cases_list_by_id_list(set(executed_case_ids_list))
+
+        return executed_cases_set
 
     def __get_test_case_info(self, test_ids_list):
         case_info_list = []
@@ -194,7 +203,7 @@ class ApiRequests:
         test_cases_list = []
 
         if self.__cache_config.use_cached_cases:
-            test_cases_list = read_list_of_dicts_from_file(cached_file_name)
+            test_cases_list = [TestCase(case) for case in read_list_of_dicts_from_file(cached_file_name)]
 
         if not test_cases_list:
             # If test cases were never being loaded or setting "use_cached_test_cases" is false ->
@@ -225,7 +234,7 @@ class ApiRequests:
         test_runs_list = []
 
         if self.__cache_config.use_cached_runs:
-            test_runs_list = read_list_of_dicts_from_file(cached_file_name)
+            test_runs_list = [TestRun(run) for run in read_list_of_dicts_from_file(cached_file_name)]
 
         if not test_runs_list:
             # If test runs were never being loaded or setting "use_cached_test_runs" is false ->
@@ -238,7 +247,7 @@ class ApiRequests:
             test_runs_list = [TestRun(run) for run in response.json()]
             write_list_of_dicts_to_file(cached_file_name, [test_run.full_info for test_run in test_runs_list])
 
-            print(f"Information about test test runs is saved to {cached_file_name} file")
+            print(f"Information about test runs is saved to {cached_file_name} file")
 
         return test_runs_list
 

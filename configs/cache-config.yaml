@@ -1,3 +1,4 @@
 use_cache:
   use_cached_test_cases: true
   use_cached_test_runs: true
+  use_cached_tests_in_test_runs: true

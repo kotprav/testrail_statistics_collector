@@ -21,3 +21,7 @@ class CacheConfigReader:
     @property
     def use_cached_runs(self):
         return self.__config["use_cached_test_runs"]
+
+    @property
+    def use_cached_tests_in_runs(self):
+        return self.__config["use_cached_tests_in_test_runs"]
