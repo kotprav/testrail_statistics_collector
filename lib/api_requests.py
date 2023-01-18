@@ -6,20 +6,21 @@ from collections import Counter
 
 import requests
 
+from lib.helpers.cache_config_reader import CacheConfigReader
+from lib.helpers.file_helper import read_list_of_dicts_from_file, write_list_of_dicts_to_file
 from lib.helpers.test_rail_config_reader import TestRailConfigReader
-from lib.test_case import TestCase
-from lib.test_in_run import TestInRun
-from lib.test_run import TestRun
+from lib.test_rail_objects.test_case import TestCase
+from lib.test_rail_objects.test_in_run import TestInRun
+from lib.test_rail_objects.test_run import TestRun
 from path_constants import CACHED_INFO_DIR_PATH, OUTPUT_FILES_DIR_PATH
 
 
 class ApiRequests:
-    __cases = None
-    __runs = None
     __failed_tests_file_name = os.path.join(CACHED_INFO_DIR_PATH, "all_failed_tests.txt")
 
     def __init__(self):
         self.__test_rail_config = TestRailConfigReader()
+        self.__cache_config = CacheConfigReader()
         self.__headers, self.__auth = {'Content-Type': 'application/json'}, (
             self.__test_rail_config.user, self.__test_rail_config.api_key)
 
@@ -27,19 +28,13 @@ class ApiRequests:
     def cases(self):
         """Gets information about test cases only the first time during the script execution.
         """
-        if self.__cases is None:
-            self.__cases = self.__get_cases()
-
-        return self.__cases
+        return self.__get_cases()
 
     @property
     def runs(self):
         """Gets information about test runs only the first time during the script execution.
         """
-        if self.__runs is None:
-            self.__runs = self.__get_runs()
-
-        return self.__runs
+        return self.__get_runs()
 
     def get_not_executed_cases_list(self):
         print("Getting never executed test cases...")
@@ -194,13 +189,28 @@ class ApiRequests:
         return [case for case in cases_list if case and not case.is_deleted]
 
     def __get_cases(self):
-        response = requests.get(
-            f'{self.__test_rail_config.api_address}/get_cases/{self.__test_rail_config.project_id}&suite_id={self.__test_rail_config.suite_id}',
-            headers=self.__headers,
-            auth=self.__auth)
+        print("Getting information about all test cases...")
+        cached_file_name = os.path.join(CACHED_INFO_DIR_PATH, "cached_cases.txt")
+        test_cases_list = []
 
-        cases_list = [TestCase(case) for case in response.json()]
-        return [case for case in cases_list if not case.is_deleted]
+        if self.__cache_config.use_cached_cases:
+            test_cases_list = read_list_of_dicts_from_file(cached_file_name)
+
+        if not test_cases_list:
+            # If test cases were never being loaded or setting "use_cached_test_cases" is false ->
+            # send request to TestRail
+            response = requests.get(
+                f'{self.__test_rail_config.api_address}/get_cases/{self.__test_rail_config.project_id}&suite_id={self.__test_rail_config.suite_id}',
+                headers=self.__headers,
+                auth=self.__auth)
+
+            cases_list = [TestCase(case) for case in response.json()]
+            test_cases_list = [case for case in cases_list if not case.is_deleted]
+            write_list_of_dicts_to_file(cached_file_name, [case.full_info for case in test_cases_list])
+
+            print(f"Information about test cases is saved to {cached_file_name} file")
+
+        return test_cases_list
 
     def __get_tests_in_run(self, run_id):
         response = requests.get(f'{self.__test_rail_config.api_address}/get_tests/{run_id}',
@@ -210,11 +220,27 @@ class ApiRequests:
         return [TestInRun(test) for test in response.json()]
 
     def __get_runs(self):
-        response = requests.get(f'{self.__test_rail_config.api_address}/get_runs/{self.__test_rail_config.project_id}',
-                                headers=self.__headers,
-                                auth=self.__auth)
+        print("Getting information about all test runs...")
+        cached_file_name = os.path.join(CACHED_INFO_DIR_PATH, "cached_test_runs_info.txt")
+        test_runs_list = []
 
-        return [TestRun(run) for run in response.json()]
+        if self.__cache_config.use_cached_runs:
+            test_runs_list = read_list_of_dicts_from_file(cached_file_name)
+
+        if not test_runs_list:
+            # If test runs were never being loaded or setting "use_cached_test_runs" is false ->
+            # send request to TestRail
+            response = requests.get(
+                f'{self.__test_rail_config.api_address}/get_runs/{self.__test_rail_config.project_id}',
+                headers=self.__headers,
+                auth=self.__auth)
+
+            test_runs_list = [TestRun(run) for run in response.json()]
+            write_list_of_dicts_to_file(cached_file_name, [test_run.full_info for test_run in test_runs_list])
+
+            print(f"Information about test test runs is saved to {cached_file_name} file")
+
+        return test_runs_list
 
     def __get_case(self, case_id):
         response = requests.get(f'{self.__test_rail_config.api_address}/get_case/{case_id}',

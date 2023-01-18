@@ -26,3 +26,7 @@ class TestCase:
         test_rail_config = TestRailConfigReader()
 
         return f"{test_rail_config.server_address}/index.php?/cases/view/{self.id}"
+
+    @property
+    def full_info(self):
+        return {"id": self.id, "title": self.title, "link": self.link}

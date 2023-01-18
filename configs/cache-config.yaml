@@ -1,0 +1,3 @@
+use_cache:
+  use_cached_test_cases: true
+  use_cached_test_runs: true
