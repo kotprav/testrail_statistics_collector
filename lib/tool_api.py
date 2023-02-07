@@ -1,10 +1,11 @@
 import collections
+import itertools
 import os
 
 from lib.api_requests import ApiRequests
 from lib.helpers.cache_config_reader import CacheConfigReader
-from lib.helpers.file_helper import write_list_of_dicts_to_file
-from lib.test_rail_objects.test_in_run_with_extended_info import TestInRunWithExtendedInfo
+from lib.helpers.file_helper import write_list_of_dicts_to_file, write_list_to_file
+from lib.test_rail_objects.test_in_run_with_case_info import TestInRunWithCaseInfo
 from path_constants import OUTPUT_FILES_DIR_PATH
 
 
@@ -48,7 +49,7 @@ class ToolApi:
         for failed_test in failed_tests_list:
             test_case = self.__get_test_case_by_test(failed_test)
             if test_case:  # test case might be deleted already
-                failed_tests_with_extended_info.append(TestInRunWithExtendedInfo(failed_test, test_case))
+                failed_tests_with_extended_info.append(TestInRunWithCaseInfo(failed_test, test_case))
 
         # count how many times one unique test case was used
         case_ids_list = [failed_test.case_id for failed_test in failed_tests_with_extended_info]
@@ -66,24 +67,62 @@ class ToolApi:
 
         print(f"Finished! Please check output_files/{result_file_name} file")
 
-    def get_the_buggiest_test_cases(self):
+    def get_the_buggiest_tests(self):
         failed_tests_list = self.__api_requests.get_failed_tests()
         tests_with_defects_list = self.__api_requests.get_failed_tests_defects_list(
             [failed_test.test_id for failed_test in failed_tests_list])
-        case_info_list = self.__api_requests.get_test_with_result(failed_tests_list)
 
-        test_with_defects_and_case_info_list = []
+        # merge failed tests with bugs list with information about test cases
+        # example result: {'id': 123, 'case_id': 1234, 'status_id': 5, 'test_id': 12345, 'defects': ['JIRA-123']}
+        failed_tests_with_bugs_list = []
 
-        # get test_with_defects_and_case_info_list
-        for test_with_defect in tests_with_defects_list:
-            test_id = test_with_defect["test_id"]
-            case_info_for_test_id = [case_info for case_info in case_info_list if case_info["test_id"] == test_id][0]
+        for item1 in failed_tests_list:
+            for item2 in tests_with_defects_list:
+                if item1.test_id == item2["test_id"]:
+                    failed_tests_with_bugs_list.append({**item1.full_info, **item2})
 
-            test_with_defects_and_case_info_list.append({"defects": test_with_defect["defects"],
-                                                         "case_id": case_info_for_test_id["case_id"],
-                                                         "case_title": case_info_for_test_id["case_title"]})
+        for item1 in failed_tests_list:
+            if not any(d["test_id"] == item1.test_id for d in tests_with_defects_list):
+                failed_tests_with_bugs_list.append(item1)
 
-        return test_with_defects_and_case_info_list
+        failed_tests_with_at_least_one_bug_list = [failed_test for failed_test in failed_tests_with_bugs_list if
+                                                   len(failed_test["defects"]) > 0]
+
+        all_defects_list = [d['defects'] for d in failed_tests_with_at_least_one_bug_list]
+        formatted_all_defects_list = list(itertools.chain.from_iterable(all_defects_list))
+
+        defects_count = collections.Counter(d for d in formatted_all_defects_list)
+        most_common_defects = defects_count.most_common()
+
+        test_case_with_bugs_list = []
+
+        for failed_test in failed_tests_with_at_least_one_bug_list:
+            test_case_with_bugs_list.append({"case_id": failed_test["case_id"], "defects": failed_test["defects"]})
+
+        test_cases_per_bug_list = []
+        bug_with_test_cases = []
+        for most_common_defect in most_common_defects:
+            test_cases_per_bug_list = [test_case_with_bug["case_id"] for test_case_with_bug in test_case_with_bugs_list
+                                       if
+                                       most_common_defect[0] in test_case_with_bug["defects"]]
+
+            test_cases_titles_per_bug_list = []
+            for case in self.cases:
+                for test_case_per_bug in set(test_cases_per_bug_list):
+                    if test_case_per_bug == case.id:
+                        test_cases_titles_per_bug_list.append({"title": case.title, "case_id": test_case_per_bug})
+
+            bug_with_test_cases.append(
+                {"defect": most_common_defect[0], "cases_with_defect": test_cases_titles_per_bug_list})
+
+        output_file_name = os.path.join(OUTPUT_FILES_DIR_PATH, "the_worst_bugs.txt")
+
+        write_list_to_file(output_file_name,
+                           [f"Defect {test_results['defect']} caused bugs {test_results['cases_with_defect']}\n\n\n" for
+                            test_results in
+                            bug_with_test_cases])
+
+        return failed_tests_with_bugs_list
 
     def __get_test_case_by_test(self, test):
         """

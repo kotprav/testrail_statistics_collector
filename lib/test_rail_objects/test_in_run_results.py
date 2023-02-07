@@ -9,7 +9,19 @@ class TestInRunResults:
 
     @property
     def defects(self):
-        return self.__req_object["defects"]
+        """
+
+        :return: string[]
+        """
+        not_parsed_defects = self.__req_object["defects"]
+
+        if not not_parsed_defects:
+            return []
+
+        if "," in not_parsed_defects:
+            return not_parsed_defects.split(", ")
+
+        return [not_parsed_defects]
 
     @property
     def full_info(self):

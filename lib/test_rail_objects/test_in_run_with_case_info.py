@@ -1,4 +1,4 @@
-class TestInRunWithExtendedInfo:
+class TestInRunWithCaseInfo:
     def __init__(self, test, case):
         """
 

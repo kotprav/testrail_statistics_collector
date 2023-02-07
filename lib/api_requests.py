@@ -10,7 +10,7 @@ from lib.helpers.test_rail_config_reader import TestRailConfigReader
 from lib.test_rail_objects.test_case import TestCase
 from lib.test_rail_objects.test_in_run import TestInRun
 from lib.test_rail_objects.test_in_run_results import TestInRunResults
-from lib.test_rail_objects.test_in_run_with_extended_info import TestInRunWithExtendedInfo
+from lib.test_rail_objects.test_in_run_with_case_info import TestInRunWithCaseInfo
 from lib.test_rail_objects.test_run import TestRun
 from path_constants import CACHED_INFO_DIR_PATH
 
@@ -30,31 +30,12 @@ class ApiRequests:
     def runs(self):
         return self.__get_runs()
 
-    def get_test_with_result(self, tests_list):
-        """
-
-        :param tests_list: TestInRun
-        :return:
-        """
-        case_info_list = []
-
-        for test in tests_list:
-            case = self.get_test_cases_list_by_id_list([test.test_id for test in tests_list])[0]
-            case_info_list.append(TestInRunWithExtendedInfo(test, case))
-
-            # Write all cases IDs tests for debugging
-            failed_case_ids_file_name = os.path.join(CACHED_INFO_DIR_PATH, "failed_cases_ids.txt")
-            f = open(failed_case_ids_file_name, 'w')
-            for failed_case_id in case_info_list:
-                f.write(json.dumps(failed_case_id))
-
-            with open(failed_case_ids_file_name) as f:
-                chained_failed_tests_list = f.read().splitlines()
-            case_info_list = json.loads("[" + chained_failed_tests_list[0].replace("}{", "}, {") + "]")
-
-            return case_info_list
-
     def get_failed_tests_defects_list(self, failed_tests_ids_list):
+        """
+
+        :param failed_tests_ids_list: number[]
+        :return: TestInRunResults[]
+        """
         cached_file_name = os.path.join(CACHED_INFO_DIR_PATH, "cached_failed_tests_results.txt")
         tests_with_defects_list = []
 
@@ -63,15 +44,15 @@ class ApiRequests:
 
         if not tests_with_defects_list:
             for test_id in failed_tests_ids_list:
-                failed_tests_list = requests.get(
+                failed_test_results = requests.get(
                     f'{self.__test_rail_config.api_address}/get_results/{test_id}', headers=self.__headers,
                     auth=self.__auth).json()
 
                 [tests_with_defects_list.append(TestInRunResults(test_id, failed_test)) for failed_test in
-                 failed_tests_list]
+                 failed_test_results]
 
-            merged_test_results_list = list(itertools.chain.from_iterable(tests_with_defects_list))
-            write_list_of_dicts_to_file([test_result.full_info for test_result in merged_test_results_list])
+            write_list_of_dicts_to_file(cached_file_name,
+                                        [test_result.full_info for test_result in tests_with_defects_list])
 
         return tests_with_defects_list
 
@@ -100,6 +81,10 @@ class ApiRequests:
         return [TestInRun(test) for test in response.json()]
 
     def get_test_results_from_all_test_runs(self):
+        """
+
+        :return: TestInRun
+        """
         cached_file_name = os.path.join(CACHED_INFO_DIR_PATH, "cached_tests_in_runs.txt")
         list_with_all_tests_results = []
 
