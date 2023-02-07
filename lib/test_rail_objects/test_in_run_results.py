@@ -4,15 +4,11 @@ class TestInRunResults:
         self.__test_id = test_id
 
     @property
-    def test_id(self):
+    def test_id(self) -> int:
         return self.__test_id
 
     @property
-    def defects(self):
-        """
-
-        :return: string[]
-        """
+    def defects(self) -> list[str]:
         not_parsed_defects = self.__req_object["defects"]
 
         if not not_parsed_defects:
@@ -24,5 +20,5 @@ class TestInRunResults:
         return [not_parsed_defects]
 
     @property
-    def full_info(self):
-        return {"test_id": self.test_id, "defects": self.defects }
+    def full_info(self) -> dict["test_id": int, "defects": list[str]]:
+        return {"test_id": self.test_id, "defects": self.defects}

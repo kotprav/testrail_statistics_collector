@@ -1,5 +1,4 @@
 import itertools
-import json
 import os
 
 import requests
@@ -10,7 +9,6 @@ from lib.helpers.test_rail_config_reader import TestRailConfigReader
 from lib.test_rail_objects.test_case import TestCase
 from lib.test_rail_objects.test_in_run import TestInRun
 from lib.test_rail_objects.test_in_run_results import TestInRunResults
-from lib.test_rail_objects.test_in_run_with_case_info import TestInRunWithCaseInfo
 from lib.test_rail_objects.test_run import TestRun
 from path_constants import CACHED_INFO_DIR_PATH
 
@@ -23,19 +21,14 @@ class ApiRequests:
             self.__test_rail_config.user, self.__test_rail_config.api_key)
 
     @property
-    def cases(self):
+    def cases(self) -> list[TestCase]:
         return self.__get_cases()
 
     @property
-    def runs(self):
+    def runs(self) -> list[TestRun]:
         return self.__get_runs()
 
-    def get_failed_tests_defects_list(self, failed_tests_ids_list):
-        """
-
-        :param failed_tests_ids_list: number[]
-        :return: TestInRunResults[]
-        """
+    def get_failed_tests_defects_list(self, failed_tests_ids_list: list[int]) -> list[TestInRunResults]:
         cached_file_name = os.path.join(CACHED_INFO_DIR_PATH, "cached_failed_tests_results.txt")
         tests_with_defects_list = []
 
@@ -56,11 +49,7 @@ class ApiRequests:
 
         return tests_with_defects_list
 
-    def get_failed_tests(self):
-        """
-
-        :return: TestInRun[]
-        """
+    def get_failed_tests(self) -> list[TestInRun]:
         tests_in_run_list = self.get_test_results_from_all_test_runs()
         failed_test_status_id = 5
         failed_tests_list = [test_in_run for test_in_run in tests_in_run_list if
@@ -68,23 +57,14 @@ class ApiRequests:
 
         return failed_tests_list
 
-    def get_tests_in_run(self, run_id):
-        """
-
-        :param run_id:
-        :return: TestInRun
-        """
+    def get_tests_in_run(self, run_id: int) -> list[TestInRun]:
         response = requests.get(f'{self.__test_rail_config.api_address}/get_tests/{run_id}',
                                 headers=self.__headers,
                                 auth=self.__auth)
 
         return [TestInRun(test) for test in response.json()]
 
-    def get_test_results_from_all_test_runs(self):
-        """
-
-        :return: TestInRun
-        """
+    def get_test_results_from_all_test_runs(self) -> TestInRun:
         cached_file_name = os.path.join(CACHED_INFO_DIR_PATH, "cached_tests_in_runs.txt")
         list_with_all_tests_results = []
 
@@ -107,15 +87,10 @@ class ApiRequests:
 
         return list_with_all_tests_results
 
-    def get_test_cases_list_by_id_list(self, id_list):
-        """
-
-        :param id_list: Case ID
-        :return: TestCase[]
-        """
+    def get_test_cases_list_by_id_list(self, id_list: int) -> list[TestCase]:
         return [case for case in self.cases if case.id in id_list]
 
-    def __get_cases(self):
+    def __get_cases(self) -> list[TestCase]:
         print("Getting information about all test cases...")
         cached_file_name = os.path.join(CACHED_INFO_DIR_PATH, "cached_cases.txt")
         test_cases_list = []
@@ -139,7 +114,7 @@ class ApiRequests:
 
         return test_cases_list
 
-    def __get_runs(self):
+    def __get_runs(self) -> list[TestRun]:
         print("Getting information about all test runs...")
         cached_file_name = os.path.join(CACHED_INFO_DIR_PATH, "cached_test_runs_info.txt")
         test_runs_list = []

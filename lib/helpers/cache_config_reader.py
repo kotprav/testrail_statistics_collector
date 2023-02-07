@@ -15,17 +15,17 @@ class CacheConfigReader:
                 print(exc)
 
     @property
-    def use_cached_cases(self):
+    def use_cached_cases(self) -> bool:
         return self.__config["test_cases"]
 
     @property
-    def use_cached_runs(self):
+    def use_cached_runs(self) -> bool:
         return self.__config["test_runs"]
 
     @property
-    def use_cached_tests_results(self):
+    def use_cached_tests_results(self) -> bool:
         return self.__config["tests_in_test_runs"]
 
     @property
-    def use_cached_failed_tests_results(self):
+    def use_cached_failed_tests_results(self) -> bool:
         return self.__config["failed_tests_results"]

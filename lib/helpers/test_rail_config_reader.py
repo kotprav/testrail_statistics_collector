@@ -15,25 +15,25 @@ class TestRailConfigReader:
                 print(exc)
 
     @property
-    def api_key(self):
+    def api_key(self) -> str:
         return self.__config["authentication"]["api_key"]
 
     @property
-    def user(self):
+    def user(self) -> str:
         return self.__config["authentication"]["user"]
 
     @property
-    def api_address(self):
+    def api_address(self) -> str:
         return self.__config["api_address"]
 
     @property
-    def server_address(self):
+    def server_address(self) -> str:
         return self.__config["server_address"]
 
     @property
-    def project_id(self):
+    def project_id(self) -> str:
         return self.__config["project_id"]
 
     @property
-    def suite_id(self):
+    def suite_id(self) -> str:
         return self.__config["suite_id"]

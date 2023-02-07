@@ -5,7 +5,10 @@ import os
 from lib.api_requests import ApiRequests
 from lib.helpers.cache_config_reader import CacheConfigReader
 from lib.helpers.file_helper import write_list_of_dicts_to_file, write_list_to_file
+from lib.test_rail_objects.test_case import TestCase
+from lib.test_rail_objects.test_in_run import TestInRun
 from lib.test_rail_objects.test_in_run_with_case_info import TestInRunWithCaseInfo
+from lib.test_rail_objects.test_run import TestRun
 from path_constants import OUTPUT_FILES_DIR_PATH
 
 
@@ -15,11 +18,11 @@ class ToolApi:
         self.__cache_config = CacheConfigReader()
 
     @property
-    def cases(self):
+    def cases(self) -> list[TestCase]:
         return self.__api_requests.cases
 
     @property
-    def runs(self):
+    def runs(self) -> list[TestRun]:
         return self.__api_requests.runs
 
     def get_not_executed_cases_list(self):
@@ -67,7 +70,8 @@ class ToolApi:
 
         print(f"Finished! Please check output_files/{result_file_name} file")
 
-    def get_the_buggiest_tests(self):
+    def get_the_buggiest_tests(self) -> list[
+        dict["id": int, "case_id": int, "status_id": int, "test_id": int, "defects": list[str]]]:
         failed_tests_list = self.__api_requests.get_failed_tests()
         tests_with_defects_list = self.__api_requests.get_failed_tests_defects_list(
             [failed_test.test_id for failed_test in failed_tests_list])
@@ -124,23 +128,14 @@ class ToolApi:
 
         return failed_tests_with_bugs_list
 
-    def __get_test_case_by_test(self, test):
-        """
-
-        :param test: TestInRun
-        :return: TestCase
-        """
+    def __get_test_case_by_test(self, test: TestInRun) -> TestCase or None:
         matching_case_list = [case for case in self.cases if case.id == test.case_id]
 
         if matching_case_list:
             return matching_case_list[0]
         return None  # if test case has been deleted already
 
-    def __get_executed_cases_list(self):
-        """
-
-        :return: TestCase[]
-        """
+    def __get_executed_cases_list(self) -> list[TestCase]:
         tests_in_run_list = self.__api_requests.get_test_results_from_all_test_runs()
 
         executed_cases_set = self.__api_requests.get_test_cases_list_by_id_list(
