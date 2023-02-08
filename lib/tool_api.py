@@ -27,17 +27,17 @@ class ToolApi:
 
     def get_not_executed_cases_list(self):
         print("Getting never executed test cases...")
-        cases_ids = set([case.id for case in self.cases])
-        executed_cases_set = self.__get_executed_cases_list()
-        executed_cases_ids_set = set([case.id for case in executed_cases_set])
+        cases_ids: set[int] = set([case.id for case in self.cases])
+        executed_cases_set: list[TestCase] = self.__get_executed_cases_list()
+        executed_cases_ids_set: set[int] = set([case.id for case in executed_cases_set])
 
         if len(executed_cases_ids_set) > len(cases_ids):
             not_executed_cases_ids_list = list(executed_cases_ids_set - cases_ids)
         else:
             not_executed_cases_ids_list = list(cases_ids - executed_cases_ids_set)
 
-        cases_list = self.__api_requests.get_test_cases_list_by_id_list(not_executed_cases_ids_list)
-        output_file_name = os.path.join(OUTPUT_FILES_DIR_PATH, "never_executed_test_cases.txt")
+        cases_list: list[TestCase] = self.__api_requests.get_test_cases_list_by_id_list(not_executed_cases_ids_list)
+        output_file_name: str = os.path.join(OUTPUT_FILES_DIR_PATH, "never_executed_test_cases.txt")
 
         write_list_of_dicts_to_file(output_file_name,
                                     [f"{test_case.title} {test_case.link}" for test_case in cases_list])
@@ -136,6 +136,7 @@ class ToolApi:
         return None  # if test case has been deleted already
 
     def __get_executed_cases_list(self) -> list[TestCase]:
+        print("Getting test results from all test runs -> __get_executed_cases_list method")
         tests_in_run_list = self.__api_requests.get_test_results_from_all_test_runs()
 
         executed_cases_set = self.__api_requests.get_test_cases_list_by_id_list(

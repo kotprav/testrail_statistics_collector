@@ -13,7 +13,7 @@ def read_list_of_dicts_from_file(file_path: str) -> list[dict["id": int, "title"
     return []
 
 
-def write_list_of_dicts_to_file(file_path: str, list_of_dicts: list[str]):
+def write_list_of_dicts_to_file(file_path: str, list_of_dicts: list):
     with open(file_path, 'w') as f:
         json.dump(list_of_dicts, f)
 

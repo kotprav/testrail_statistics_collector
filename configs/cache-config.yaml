@@ -2,4 +2,4 @@ use_cached:
   test_cases: true
   test_runs: true
   tests_in_test_runs: true
-  failed_tests_results: false
+  failed_tests_results: true
