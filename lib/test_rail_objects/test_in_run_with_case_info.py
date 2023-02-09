@@ -20,5 +20,5 @@ class TestInRunWithCaseInfo:
         return self.__case.title
 
     @property
-    def full_info(self) -> dict["test_id": int, "case_id": int, "case_title": str]:
+    def full_info(self) -> dict[str, int or str]:
         return {"test_id": self.test_id, "case_id": self.case_id, "case_title": self.case_title}

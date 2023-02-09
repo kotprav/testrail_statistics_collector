@@ -2,7 +2,7 @@ from lib.helpers.test_rail_config_reader import TestRailConfigReader
 
 
 class TestCase:
-    def __init__(self, resp_object: dict["id": int, "title": str, "link": str]):
+    def __init__(self, resp_object: dict[str, int or str]):
         self.__info = resp_object
 
     @property
@@ -28,5 +28,5 @@ class TestCase:
         return f"{test_rail_config.server_address}/index.php?/cases/view/{self.id}"
 
     @property
-    def full_info(self) -> dict["id": int, "title": str, "link": str]:
+    def full_info(self) -> dict[str, int or str]:
         return {"id": self.id, "title": self.title, "link": self.link}

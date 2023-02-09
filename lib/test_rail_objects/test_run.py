@@ -7,5 +7,5 @@ class TestRun:
         return self.__object["id"]
 
     @property
-    def full_info(self) -> dict["id", int]:
+    def full_info(self) -> dict[str, int]:
         return {"id": self.id}

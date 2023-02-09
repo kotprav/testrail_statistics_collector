@@ -1,5 +1,5 @@
 class TestInRun:
-    def __init__(self, req_object: dict["id": int, "case_id": int, "status_id": int]):
+    def __init__(self, req_object: dict[str, int]):
         self.__req_object = req_object
 
     @property
@@ -15,5 +15,5 @@ class TestInRun:
         return self.__req_object["status_id"]
 
     @property
-    def full_info(self) -> dict["id": int, "case_id": int, "status_id": int]:
+    def full_info(self) -> dict[str, int]:
         return {"id": self.test_id, "case_id": self.case_id, "status_id": self.status_id}

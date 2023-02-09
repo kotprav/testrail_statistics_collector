@@ -20,5 +20,5 @@ class TestInRunResults:
         return [not_parsed_defects]
 
     @property
-    def full_info(self) -> dict["test_id": int, "defects": list[str]]:
+    def full_info(self) -> dict[str, int or list[str]]:
         return {"test_id": self.test_id, "defects": self.defects}

@@ -22,8 +22,8 @@ class ApiRequests:
             self.__test_rail_config.user, self.__test_rail_config.api_key)
         self.__cases = None
         self.__runs = None
-        self.__tests_with_defects_list = []
-        self.__list_with_all_tests_results = []
+        self.__tests_with_defects_list: list[TestInRunResults] = []
+        self.__list_with_all_tests_results: list[TestInRun] = []
 
     @property
     def cases(self) -> list[TestCase]:
@@ -59,9 +59,9 @@ class ApiRequests:
 
     def get_failed_tests(self) -> list[TestInRun]:
         print("Getting test results from all test runs -> get_failed_tests method")
-        tests_in_run_list = self.get_test_results_from_all_test_runs()
+        tests_in_run_list: Union[list[TestInRun], list[Any]] = self.get_test_results_from_all_test_runs()
         failed_test_status_id = 5
-        failed_tests_list = [test_in_run for test_in_run in tests_in_run_list if
+        failed_tests_list: list[TestInRun] = [test_in_run for test_in_run in tests_in_run_list if
                              test_in_run.status_id == failed_test_status_id]
 
         return failed_tests_list
@@ -75,7 +75,7 @@ class ApiRequests:
         return [TestInRun(test) for test in response.json()]
 
     def get_test_results_from_all_test_runs(self) -> Union[list[TestInRun], list[Any]]:
-        cached_file_name = os.path.join(CACHED_INFO_DIR_PATH, "cached_tests_in_runs.txt")
+        cached_file_name: str = os.path.join(CACHED_INFO_DIR_PATH, "cached_tests_in_runs.txt")
         if self.__cache_config.use_cached_tests_results:
             self.__list_with_all_tests_results = [TestInRun(list_element) for list_element in
                                                   read_list_of_dicts_from_file(cached_file_name)]
@@ -100,8 +100,8 @@ class ApiRequests:
 
     def __get_cases(self) -> list[TestCase]:
         print("Getting information about all test cases...")
-        cached_file_name = os.path.join(CACHED_INFO_DIR_PATH, "cached_cases.txt")
-        test_cases_list = []
+        cached_file_name: str = os.path.join(CACHED_INFO_DIR_PATH, "cached_cases.txt")
+        test_cases_list: list[TestCase] = []
 
         if self.__cache_config.use_cached_cases:
             test_cases_list = [TestCase(case) for case in read_list_of_dicts_from_file(cached_file_name)]
@@ -115,7 +115,7 @@ class ApiRequests:
                 auth=self.__auth)
 
             print("Request to get cases was sent and received")
-            cases_list = [TestCase(case) for case in response.json()]
+            cases_list: list[TestCase] = [TestCase(case) for case in response.json()]
             test_cases_list = [case for case in cases_list if not case.is_deleted]
             write_list_of_dicts_to_file(cached_file_name, [case.full_info for case in test_cases_list])
 
@@ -125,8 +125,8 @@ class ApiRequests:
 
     def __get_runs(self) -> list[TestRun]:
         print("Getting information about all test runs...")
-        cached_file_name = os.path.join(CACHED_INFO_DIR_PATH, "cached_test_runs_info.txt")
-        test_runs_list = []
+        cached_file_name: str = os.path.join(CACHED_INFO_DIR_PATH, "cached_test_runs_info.txt")
+        test_runs_list: list[TestRun] = []
 
         if self.__cache_config.use_cached_runs:
             test_runs_list = [TestRun(run) for run in read_list_of_dicts_from_file(cached_file_name)]
