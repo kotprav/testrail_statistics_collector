@@ -140,9 +140,8 @@ class ToolApi:
 
     def __get_executed_cases_list(self) -> list[TestCase]:
         print("Getting test results from all test runs -> __get_executed_cases_list method")
-        tests_in_run_list: Union[list[TestInRun], list[Any]] = self.__api_requests.get_test_results_from_all_test_runs()
 
         executed_cases_set = self.__api_requests.get_test_cases_list_by_id_list(
-            set([test_in_run.case_id for test_in_run in tests_in_run_list]))
+            set([test_in_run.case_id for test_in_run in self.__api_requests.test_results_from_all_runs]))
 
         return executed_cases_set
