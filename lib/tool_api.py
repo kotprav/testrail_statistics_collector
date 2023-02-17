@@ -30,42 +30,35 @@ class ToolApi:
     def get_not_executed_cases_list(self):
         print("Getting never executed test cases...")
         cases_ids: set[int] = set([case.id for case in self.cases])
-        executed_cases_set: list[TestCase] = self.__get_executed_cases_list()
-        executed_cases_ids_set: set[int] = set([case.id for case in executed_cases_set])
+        executed_cases_ids_set: set[int] = self.__get_executed_cases_ids_list()
+        not_executed_cases_ids_list: list[int] = self.__get_not_executed_cases_ids(cases_ids, executed_cases_ids_set)
 
-        if len(executed_cases_ids_set) > len(cases_ids):
-            not_executed_cases_ids_list = list(executed_cases_ids_set - cases_ids)
-        else:
-            not_executed_cases_ids_list = list(cases_ids - executed_cases_ids_set)
+        not_executed_cases_list: list[TestCase] = self.__api_requests.get_test_cases_list_by_id_list(
+            not_executed_cases_ids_list)
 
-        cases_list: list[TestCase] = self.__api_requests.get_test_cases_list_by_id_list(not_executed_cases_ids_list)
         output_file_name: str = os.path.join(OUTPUT_FILES_DIR_PATH, "never_executed_test_cases.txt")
 
         write_list_of_dicts_to_file(output_file_name,
-                                    [f"{test_case.title} {test_case.link}" for test_case in cases_list])
+                                    [f"{test_case.title} {test_case.link}" for test_case in not_executed_cases_list])
 
         print(f"Finished! Please check {output_file_name} file")
 
     def get_most_failing_test_cases(self):
         print("Getting the most failing test cases in test runs...")
         failed_tests_list: list[TestInRun] = self.__api_requests.get_failed_tests()
-        failed_tests_with_extended_info: list[TestInRunWithCaseInfo] = []
 
-        for failed_test in failed_tests_list:
-            test_case: TestCase = self.__get_test_case_by_test(failed_test)
-            if test_case:  # test case might be deleted already
-                failed_tests_with_extended_info.append(TestInRunWithCaseInfo(failed_test, test_case))
+        failed_tests_with_extended_info_list: list[TestInRunWithCaseInfo] = self.__get_failed_tests_with_extended_info(
+            failed_tests_list)
 
-        # count how many times one unique test case was used
-        case_ids_list: list[int] = [failed_test.case_id for failed_test in failed_tests_with_extended_info]
-        test_case_usages_counter: collections.Counter = collections.Counter(case_ids_list)
-        most_common_info: list[tuple[int, int]] = test_case_usages_counter.most_common()
+        test_cases_usage_info: list[tuple[int, int]] = self.__get_test_case_usage_info(
+            failed_tests_with_extended_info_list)
 
         result_file_name: str = os.path.join(OUTPUT_FILES_DIR_PATH, "the_most_failing_test_cases_in_test_runs.txt")
+
         with open(result_file_name, 'w') as f:
-            for info in most_common_info:
+            for info in test_cases_usage_info:
                 case_title: str = \
-                    list(filter(lambda element: element.case_id == info[0], failed_tests_with_extended_info))[
+                    list(filter(lambda element: element.case_id == info[0], failed_tests_with_extended_info_list))[
                         0].case_title
 
                 f.write(f"{info[0]} {case_title}: {info[1]} times\n")
@@ -138,10 +131,37 @@ class ToolApi:
             return matching_case_list[0]
         return None  # if test case has been deleted already
 
-    def __get_executed_cases_list(self) -> list[TestCase]:
-        print("Getting test results from all test runs -> __get_executed_cases_list method")
+    def __get_executed_cases_ids_list(self) -> set[int]:
+        print("Getting test results from all test runs")
 
         executed_cases_set = self.__api_requests.get_test_cases_list_by_id_list(
             set([test_in_run.case_id for test_in_run in self.__api_requests.test_results_from_all_runs]))
 
-        return executed_cases_set
+        executed_cases_ids_set: set[int] = set([case.id for case in executed_cases_set])
+
+        return executed_cases_ids_set
+
+    def __get_test_case_usage_info(self, failed_tests_list: list[TestInRunWithCaseInfo]) -> list[tuple[int, int]]:
+        case_ids_list: list[int] = [failed_test.case_id for failed_test in failed_tests_list]
+        test_case_usages_counter: collections.Counter = collections.Counter(case_ids_list)
+        most_common_info: list[tuple[int, int]] = test_case_usages_counter.most_common()
+
+        return most_common_info
+
+    def __get_failed_tests_with_extended_info(self, failed_tests_list: list[TestInRun]) -> list[TestInRunWithCaseInfo]:
+        failed_tests_with_extended_info: list[TestInRunWithCaseInfo] = []
+
+        for failed_test in failed_tests_list:
+            test_case: TestCase = self.__get_test_case_by_test(failed_test)
+            if test_case:  # test case might be deleted already
+                failed_tests_with_extended_info.append(TestInRunWithCaseInfo(failed_test, test_case))
+
+        return failed_tests_with_extended_info
+
+    def __get_not_executed_cases_ids(self, cases_ids: set[int], executed_cases_ids_set: set[int]) -> list[int]:
+        if len(executed_cases_ids_set) > len(cases_ids):
+            not_executed_cases_ids_list = list(executed_cases_ids_set - cases_ids)
+        else:
+            not_executed_cases_ids_list = list(cases_ids - executed_cases_ids_set)
+
+        return not_executed_cases_ids_list

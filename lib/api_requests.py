@@ -102,7 +102,7 @@ class ApiRequests:
 
         return all_tests_results_list
 
-    def get_test_cases_list_by_id_list(self, id_list: list[int]) -> list[TestCase]:
+    def get_test_cases_list_by_id_list(self, id_list: list[int] or set[int]) -> list[TestCase]:
         return [case for case in self.cases if case.id in id_list]
 
     def __get_cases(self) -> list[TestCase]:

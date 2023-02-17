@@ -1,7 +1,7 @@
 from lib.tool_api import ToolApi
 
-get_never_executed_test_cases = True
-get_most_failing_test_cases = False
+get_never_executed_test_cases = False
+get_most_failing_test_cases = True
 get_the_buggiest_test_cases = False
 
 api_requests = ToolApi()
