@@ -1,6 +1,5 @@
 import itertools
 import os
-from typing import Union, Any
 
 import requests
 
@@ -24,6 +23,8 @@ class ApiRequests:
         self.__runs = None
         self.__tests_with_defects_list: list[TestInRunResults] = []
         self.__list_with_all_tests_results: list[TestInRun] = []
+        self.__failed_tests_list: list[TestInRun] = []
+        self.__failed_tests_defects_list: list[TestInRunResults] = []
 
     @property
     def cases(self) -> list[TestCase]:
@@ -42,6 +43,13 @@ class ApiRequests:
         if not self.__list_with_all_tests_results:
             self.__list_with_all_tests_results = self.__get_test_results_from_all_test_runs()
         return self.__list_with_all_tests_results
+
+    @property
+    def failed_tests(self):
+        if not self.__failed_tests_list:
+            self.__failed_tests_list = self.__get_failed_tests()
+
+        return self.__failed_tests_list
 
     def get_failed_tests_defects_list(self, failed_tests_ids_list: list[int]) -> list[TestInRunResults]:
         cached_file_name: str = os.path.join(CACHED_INFO_DIR_PATH, "cached_failed_tests_results.txt")
@@ -63,21 +71,21 @@ class ApiRequests:
 
         return self.__tests_with_defects_list
 
-    def get_failed_tests(self) -> list[TestInRun]:
-        print("---Network: Getting test results from all test runs -> get_failed_tests method")
-        failed_test_status_id = 5
-        failed_tests_list: list[TestInRun] = [test_in_run for test_in_run in self.test_results_from_all_runs if
-                                              test_in_run.status_id == failed_test_status_id]
-
-        return failed_tests_list
-
-    def get_tests_in_run(self, run_id: int) -> list[TestInRun]:
+    def __get_tests_in_run(self, run_id: int) -> list[TestInRun]:
         response = requests.get(f'{self.__test_rail_config.api_address}/get_tests/{run_id}',
                                 headers=self.__headers,
                                 auth=self.__auth)
 
         print("---Network: Request to get tests in run was sent")
         return [TestInRun(test) for test in response.json()]
+
+    def __get_failed_tests(self) -> list[TestInRun]:
+        print("---Network: Getting test results from all test runs -> get_failed_tests method")
+        failed_test_status_id = 5
+        failed_tests_list: list[TestInRun] = [test_in_run for test_in_run in self.test_results_from_all_runs if
+                                              test_in_run.status_id == failed_test_status_id]
+
+        return failed_tests_list
 
     def __get_test_results_from_all_test_runs(self) -> list[TestInRun]:
         cached_file_name: str = os.path.join(CACHED_INFO_DIR_PATH, "cached_tests_in_runs.txt")
@@ -90,7 +98,7 @@ class ApiRequests:
         print(f"---Network: Getting available information about tests in ${len(self.runs)} test runs")
 
         for run in self.runs:
-            tests_in_run_list: list[TestInRun] = self.get_tests_in_run(run.id)
+            tests_in_run_list: list[TestInRun] = self.__get_tests_in_run(run.id)
             list_with_test_runs_results_lists.append(tests_in_run_list)
 
         # get one giant list of all tests results from multiple lists
@@ -101,9 +109,6 @@ class ApiRequests:
         print(f"---Network: Information about all tests in test runs is saved to {cached_file_name} file")
 
         return all_tests_results_list
-
-    def get_test_cases_list_by_id_list(self, id_list: list[int] or set[int]) -> list[TestCase]:
-        return [case for case in self.cases if case.id in id_list]
 
     def __get_cases(self) -> list[TestCase]:
         print("---Network: Getting information about all test cases...")

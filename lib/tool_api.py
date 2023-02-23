@@ -33,7 +33,7 @@ class ToolApi:
         executed_cases_ids_set: set[int] = self.__get_executed_cases_ids_list()
         not_executed_cases_ids_list: list[int] = self.__get_not_executed_cases_ids(cases_ids, executed_cases_ids_set)
 
-        not_executed_cases_list: list[TestCase] = self.__api_requests.get_test_cases_list_by_id_list(
+        not_executed_cases_list: list[TestCase] = self.__get_test_cases_list_by_id_list(
             not_executed_cases_ids_list)
 
         output_file_name: str = os.path.join(OUTPUT_FILES_DIR_PATH, "never_executed_test_cases.txt")
@@ -45,10 +45,9 @@ class ToolApi:
 
     def get_most_failing_test_cases(self):
         print("Getting the most failing test cases in test runs...")
-        failed_tests_list: list[TestInRun] = self.__api_requests.get_failed_tests()
 
         failed_tests_with_extended_info_list: list[TestInRunWithCaseInfo] = self.__get_failed_tests_with_extended_info(
-            failed_tests_list)
+            self.__api_requests.failed_tests)
 
         test_cases_usage_info: list[tuple[int, int]] = self.__get_test_case_usage_info(
             failed_tests_with_extended_info_list)
@@ -67,20 +66,19 @@ class ToolApi:
 
     def get_the_buggiest_tests(self) -> list[
         dict[str, int or list[str]]]:
-        failed_tests_list: list[TestInRun] = self.__api_requests.get_failed_tests()
         tests_with_defects_list: list[TestInRunResults] = self.__api_requests.get_failed_tests_defects_list(
-            [failed_test.test_id for failed_test in failed_tests_list])
+            [failed_test.test_id for failed_test in self.__api_requests.failed_tests])
 
         # merge failed tests with bugs list with information about test cases
         # example result: {'id': 123, 'case_id': 1234, 'status_id': 5, 'test_id': 12345, 'defects': ['JIRA-123']}
         failed_tests_with_bugs_list: list[dict[str, int or list[str]]] = []
 
-        for item1 in failed_tests_list:
+        for item1 in self.__api_requests.failed_tests:
             for item2 in tests_with_defects_list:
                 if item1.test_id == item2["test_id"]:
                     failed_tests_with_bugs_list.append({**item1.full_info, **item2})
 
-        for item1 in failed_tests_list:
+        for item1 in self.__api_requests.failed_tests:
             if not any(d["test_id"] == item1.test_id for d in tests_with_defects_list):
                 failed_tests_with_bugs_list.append(item1)
 
@@ -134,7 +132,7 @@ class ToolApi:
     def __get_executed_cases_ids_list(self) -> set[int]:
         print("Getting test results from all test runs")
 
-        executed_cases_set = self.__api_requests.get_test_cases_list_by_id_list(
+        executed_cases_set = self.__get_test_cases_list_by_id_list(
             set([test_in_run.case_id for test_in_run in self.__api_requests.test_results_from_all_runs]))
 
         executed_cases_ids_set: set[int] = set([case.id for case in executed_cases_set])
@@ -165,3 +163,6 @@ class ToolApi:
             not_executed_cases_ids_list = list(cases_ids - executed_cases_ids_set)
 
         return not_executed_cases_ids_list
+
+    def __get_test_cases_list_by_id_list(self, id_list: list[int] or set[int]) -> list[TestCase]:
+        return [case for case in self.cases if case.id in id_list]
