@@ -7,7 +7,6 @@ from lib.helpers.cache_config_reader import CacheConfigReader
 from lib.helpers.file_helper import write_list_of_dicts_to_file, write_list_to_file
 from lib.test_rail_objects.test_case import TestCase
 from lib.test_rail_objects.test_in_run import TestInRun
-from lib.test_rail_objects.test_in_run_results import TestInRunResults
 from lib.test_rail_objects.test_in_run_with_case_info import TestInRunWithCaseInfo
 from lib.test_rail_objects.test_run import TestRun
 from path_constants import OUTPUT_FILES_DIR_PATH
@@ -50,13 +49,19 @@ class ToolApi:
 
     def get_the_buggiest_tests(self) -> list[
         dict[str, int or list[str]]]:
-        tests_with_defects_list: list[TestInRunResults] = self.__get_tests_with_defects_list()
+        print("Getting the buggiest tests...")
+        tests_with_defects_list: list[TestInRun] = self.__get_tests_with_defects_list()
 
         # merge failed tests with bugs list with information about test cases
         # example result: {'id': 123, 'case_id': 1234, 'status_id': 5, 'test_id': 12345, 'defects': ['JIRA-123']}
         failed_tests_with_bugs_list: list[dict[str, int or list[str]]] = self.__get_failed_tests_with_bugs_list(
             tests_with_defects_list)
 
+        self.__save_info_about_the_buggiest_tests(failed_tests_with_bugs_list)
+
+        return failed_tests_with_bugs_list
+
+    def __save_info_about_the_buggiest_tests(self, failed_tests_with_bugs_list: list[dict[str, int or list[str]]]):
         failed_tests_with_at_least_one_bug_list: list[
             dict[str, int or list[str]]] = self.__get_failed_tests_with_at_least_one_bug_list(
             failed_tests_with_bugs_list)
@@ -72,15 +77,13 @@ class ToolApi:
 
         self.__write_info_about_the_buggiest_tests(bug_with_test_cases)
 
-        return failed_tests_with_bugs_list
-
     def __write_info_about_not_executed_cases_list(self, not_executed_cases_list: list[TestCase]):
         output_file_name: str = os.path.join(OUTPUT_FILES_DIR_PATH, "never_executed_test_cases.txt")
 
         write_list_of_dicts_to_file(output_file_name,
                                     [f"{test_case.title} {test_case.link}" for test_case in not_executed_cases_list])
 
-        print(f"Finished! Please check {output_file_name} file")
+        self.__write_result_logs(output_file_name)
 
     def __write_info_about_most_failing_test_cases(self, test_cases_usage_info: list[tuple[int, int]],
                                                    failed_tests_with_extended_info_list: list[TestInRunWithCaseInfo]):
@@ -94,7 +97,7 @@ class ToolApi:
 
                 f.write(f"{info[0]} {case_title}: {info[1]} times\n")
 
-        print(f"Finished! Please check output_files/{result_file_name} file")
+        self.__write_result_logs(result_file_name)
 
     def __write_info_about_the_buggiest_tests(self, bug_with_test_cases: list[dict[str, str or list]]):
         output_file_name: str = os.path.join(OUTPUT_FILES_DIR_PATH, "the_worst_bugs.txt")
@@ -104,6 +107,8 @@ class ToolApi:
                             test_results in
                             bug_with_test_cases])
 
+        self.__write_result_logs(output_file_name)
+
     def __get_test_case_by_test(self, test: TestInRun) -> TestCase or None:
         matching_case_list: list[TestCase] = [case for case in self.cases if case.id == test.case_id]
 
@@ -112,8 +117,6 @@ class ToolApi:
         return None  # if test case has been deleted already
 
     def __get_executed_cases_ids_list(self) -> set[int]:
-        print("Getting test results from all test runs")
-
         executed_cases_set = self.__get_test_cases_list_by_id_list(
             set([test_in_run.case_id for test_in_run in self.__api_requests.test_results_from_all_runs]))
 
@@ -121,7 +124,8 @@ class ToolApi:
 
         return executed_cases_ids_set
 
-    def __get_test_case_usage_info(self, failed_tests_list: list[TestInRunWithCaseInfo]) -> list[tuple[int, int]]:
+    @staticmethod
+    def __get_test_case_usage_info(failed_tests_list: list[TestInRunWithCaseInfo]) -> list[tuple[int, int]]:
         case_ids_list: list[int] = [failed_test.case_id for failed_test in failed_tests_list]
         test_case_usages_counter: collections.Counter = collections.Counter(case_ids_list)
         most_common_info: list[tuple[int, int]] = test_case_usages_counter.most_common()
@@ -138,7 +142,8 @@ class ToolApi:
 
         return failed_tests_with_extended_info
 
-    def __get_not_executed_cases_ids(self, cases_ids: set[int], executed_cases_ids_set: set[int]) -> list[int]:
+    @staticmethod
+    def __get_not_executed_cases_ids(cases_ids: set[int], executed_cases_ids_set: set[int]) -> list[int]:
         if len(executed_cases_ids_set) > len(cases_ids):
             not_executed_cases_ids_list = list(executed_cases_ids_set - cases_ids)
         else:
@@ -149,11 +154,11 @@ class ToolApi:
     def __get_test_cases_list_by_id_list(self, id_list: list[int] or set[int]) -> list[TestCase]:
         return [case for case in self.cases if case.id in id_list]
 
-    def __get_tests_with_defects_list(self) -> list[TestInRunResults]:
+    def __get_tests_with_defects_list(self) -> list[TestInRun]:
         return self.__api_requests.get_failed_tests_defects_list(
             [failed_test.test_id for failed_test in self.__api_requests.failed_tests])
 
-    def __get_failed_tests_with_bugs_list(self, tests_with_defects_list: list[TestInRunResults]) -> list[
+    def __get_failed_tests_with_bugs_list(self, tests_with_defects_list: list[TestInRun]) -> list[
         dict[str, int or list[str]]]:
         # merge failed tests with bugs list with information about test cases
         # example result: {'id': 123, 'case_id': 1234, 'status_id': 5, 'test_id': 12345, 'defects': ['JIRA-123']}
@@ -170,22 +175,24 @@ class ToolApi:
 
         return failed_tests_with_bugs_list
 
-    def __get_failed_tests_with_at_least_one_bug_list(self,
-                                                      failed_tests_with_bugs_list: list[dict[str, int or list[str]]]) -> \
+    @staticmethod
+    def __get_failed_tests_with_at_least_one_bug_list(failed_tests_with_bugs_list: list[dict[str, int or list[str]]]) -> \
             list[dict[str, int or list[str]]]:
         return [failed_test for failed_test in failed_tests_with_bugs_list if len(failed_test["defects"]) > 0]
 
-    def __get_all_defects_list(self, failed_tests_with_at_least_one_bug_list: list[
+    @staticmethod
+    def __get_all_defects_list(failed_tests_with_at_least_one_bug_list: list[
         dict[str, int or list[str]]]) -> list[str]:
         all_defects_list: list[list[str]] = [d['defects'] for d in failed_tests_with_at_least_one_bug_list]
         return list(itertools.chain.from_iterable(all_defects_list))
 
-    def __get_most_common_defects(self, all_defects_list: list[str]) -> list[tuple[str, int]]:
+    @staticmethod
+    def __get_most_common_defects(all_defects_list: list[str]) -> list[tuple[str, int]]:
         defects_count: collections.Counter = collections.Counter(d for d in all_defects_list)
         return defects_count.most_common()
 
-    def __get_test_case_with_bugs_list(self,
-                                       failed_tests_with_at_least_one_bug_list: list[dict[str, int or list[str]]]) -> \
+    @staticmethod
+    def __get_test_case_with_bugs_list(failed_tests_with_at_least_one_bug_list: list[dict[str, int or list[str]]]) -> \
             list[dict[str, int or list[str]]]:
         return [{"case_id": failed_test["case_id"], "defects": failed_test["defects"]} for failed_test in
                 failed_tests_with_at_least_one_bug_list]
@@ -211,3 +218,7 @@ class ToolApi:
                 {"defect": most_common_defect[0], "cases_with_defect": test_cases_titles_per_bug_list})
 
         return bug_with_test_cases
+
+    @staticmethod
+    def __write_result_logs(file_name: str):
+        print(f"૮₍ ˶ᵔ ᵕ ᵔ˶ ₎ა Finished! Please check output_files/{file_name} file")

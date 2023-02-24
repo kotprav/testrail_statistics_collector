@@ -15,5 +15,19 @@ class TestInRun:
         return self.__req_object["status_id"]
 
     @property
+    def defects(self) -> list[str]:
+        if "defects" in self.__req_object:
+            not_parsed_defects = self.__req_object["defects"]
+
+            if not not_parsed_defects:
+                return []
+
+            if "," in not_parsed_defects:
+                return not_parsed_defects.split(", ")
+
+            return [not_parsed_defects]
+        return []
+
+    @property
     def full_info(self) -> dict[str, int]:
-        return {"id": self.test_id, "case_id": self.case_id, "status_id": self.status_id}
+        return {"id": self.test_id, "case_id": self.case_id, "status_id": self.status_id, "defects": self.defects}

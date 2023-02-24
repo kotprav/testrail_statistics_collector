@@ -8,7 +8,6 @@ from lib.helpers.file_helper import read_list_of_dicts_from_file, write_list_of_
 from lib.helpers.test_rail_config_reader import TestRailConfigReader
 from lib.test_rail_objects.test_case import TestCase
 from lib.test_rail_objects.test_in_run import TestInRun
-from lib.test_rail_objects.test_in_run_results import TestInRunResults
 from lib.test_rail_objects.test_run import TestRun
 from path_constants import CACHED_INFO_DIR_PATH
 
@@ -21,10 +20,10 @@ class ApiRequests:
             self.__test_rail_config.user, self.__test_rail_config.api_key)
         self.__cases = None
         self.__runs = None
-        self.__tests_with_defects_list: list[TestInRunResults] = []
+        self.__tests_with_defects_list: list[TestInRun] = []
         self.__list_with_all_tests_results: list[TestInRun] = []
         self.__failed_tests_list: list[TestInRun] = []
-        self.__failed_tests_defects_list: list[TestInRunResults] = []
+        self.__failed_tests_defects_list: list[TestInRun] = []
 
     @property
     def cases(self) -> list[TestCase]:
@@ -51,7 +50,7 @@ class ApiRequests:
 
         return self.__failed_tests_list
 
-    def get_failed_tests_defects_list(self, failed_tests_ids_list: list[int]) -> list[TestInRunResults]:
+    def get_failed_tests_defects_list(self, failed_tests_ids_list: list[int]) -> list[TestInRun]:
         cached_file_name: str = os.path.join(CACHED_INFO_DIR_PATH, "cached_failed_tests_results.txt")
         if self.__cache_config.use_cached_failed_tests_results:
             self.__tests_with_defects_list = read_list_of_dicts_from_file(cached_file_name)
@@ -62,8 +61,8 @@ class ApiRequests:
                     f'{self.__test_rail_config.api_address}/get_results/{test_id}', headers=self.__headers,
                     auth=self.__auth).json()
 
-                print("---Network: Request to get results of failed tests was sent")
-                [self.__tests_with_defects_list.append(TestInRunResults(test_id, failed_test)) for failed_test in
+                self.__write_network_logs("Request to get results of failed tests was sent")
+                [self.__tests_with_defects_list.append(TestInRun(test_id, failed_test)) for failed_test in
                  failed_test_results]
 
                 write_list_of_dicts_to_file(cached_file_name,
@@ -76,11 +75,12 @@ class ApiRequests:
                                 headers=self.__headers,
                                 auth=self.__auth)
 
-        print("---Network: Request to get tests in run was sent")
+        self.__write_network_logs(f"Request to get tests in run with ID {run_id} was sent")
+
         return [TestInRun(test) for test in response.json()]
 
     def __get_failed_tests(self) -> list[TestInRun]:
-        print("---Network: Getting test results from all test runs -> get_failed_tests method")
+        self.__write_network_logs("Getting test results from all test runs")
         failed_test_status_id = 5
         failed_tests_list: list[TestInRun] = [test_in_run for test_in_run in self.test_results_from_all_runs if
                                               test_in_run.status_id == failed_test_status_id]
@@ -95,7 +95,7 @@ class ApiRequests:
 
         list_with_test_runs_results_lists: list[list[TestInRun]] = []
 
-        print(f"---Network: Getting available information about tests in ${len(self.runs)} test runs")
+        self.__write_network_logs(f"Getting available information about tests from {len(self.runs)} test runs")
 
         for run in self.runs:
             tests_in_run_list: list[TestInRun] = self.__get_tests_in_run(run.id)
@@ -106,12 +106,12 @@ class ApiRequests:
         write_list_of_dicts_to_file(cached_file_name,
                                     [test_result.full_info for test_result in all_tests_results_list])
 
-        print(f"---Network: Information about all tests in test runs is saved to {cached_file_name} file")
+        self.__write_network_logs(f"Information about all tests in test runs is saved to {cached_file_name} file")
 
         return all_tests_results_list
 
     def __get_cases(self) -> list[TestCase]:
-        print("---Network: Getting information about all test cases...")
+        self.__write_network_logs("Getting information about all test cases...")
         cached_file_name: str = os.path.join(CACHED_INFO_DIR_PATH, "cached_cases.txt")
         test_cases_list: list[TestCase] = []
 
@@ -126,17 +126,16 @@ class ApiRequests:
                 headers=self.__headers,
                 auth=self.__auth)
 
-            print("---Network: Request to get cases was sent and received")
+            self.__write_network_logs("Request to get cases was sent and received")
             cases_list: list[TestCase] = [TestCase(case) for case in response.json()]
             test_cases_list = [case for case in cases_list if not case.is_deleted]
             write_list_of_dicts_to_file(cached_file_name, [case.full_info for case in test_cases_list])
-
-            print(f"---Network: Information about test cases is saved to {cached_file_name} file")
+            self.__write_network_logs(f"Information about test cases is saved to {cached_file_name} file")
 
         return test_cases_list
 
     def __get_runs(self) -> list[TestRun]:
-        print("---Network: Getting information about all test runs...")
+        self.__write_network_logs("Getting information about all test runs...")
         cached_file_name: str = os.path.join(CACHED_INFO_DIR_PATH, "cached_test_runs_info.txt")
         test_runs_list: list[TestRun] = []
 
@@ -151,10 +150,15 @@ class ApiRequests:
                 headers=self.__headers,
                 auth=self.__auth)
 
-            print("---Network: Request to get runs was sent and received")
+            self.__write_network_logs("Request to get runs was sent and received")
+
             test_runs_list = [TestRun(run) for run in response.json()]
             write_list_of_dicts_to_file(cached_file_name, [test_run.full_info for test_run in test_runs_list])
 
-            print(f"---Network: Information about test runs available is saved to {cached_file_name} file")
+            self.__write_network_logs(f"Information about test runs available is saved to {cached_file_name} file")
 
         return test_runs_list
+
+    @staticmethod
+    def __write_network_logs(message: str):
+        print(f'---Network: {message}')

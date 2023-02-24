@@ -5,7 +5,7 @@ def read_list_of_dicts_from_file(file_path: str) -> list[dict["id": int, "title"
     try:
         with open(file_path, encoding='utf-8') as data_file:
             data = json.loads(data_file.read())
-            print(f"{file_path} is successfully loaded")
+            print(f"---Cache: {file_path} is successfully loaded")
             return data
     except:
         pass
@@ -33,7 +33,7 @@ def read_list_from_file(file_path: str) -> list:
                 curr_place = line[:-1]
                 # Add item to the list
                 result_list.append(curr_place)
-                print(f"{file_path} is successfully loaded")
+                print(f"---Cache: {file_path} is successfully loaded")
     except:
         pass
 
