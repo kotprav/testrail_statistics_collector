@@ -44,7 +44,7 @@ class ApiRequests:
         return self.__list_with_all_tests_results
 
     @property
-    def failed_tests(self):
+    def failed_tests(self) -> list[TestInRun]:
         if not self.__failed_tests_list:
             self.__failed_tests_list = self.__get_failed_tests()
 
@@ -162,3 +162,4 @@ class ApiRequests:
     @staticmethod
     def __write_network_logs(message: str):
         print(f'---Network: {message}')
+

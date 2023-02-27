@@ -2,3 +2,4 @@ cached_info/
 configs/test-rail-config.yaml
 output_files/
 .idea/
+/.coverage
