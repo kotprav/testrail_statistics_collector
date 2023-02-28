@@ -1,21 +1,19 @@
-from api_requests import ApiRequests
+from lib.tool_api import ToolApi
 
-get_test_cases_count, get_runs_count = True, True
-get_never_executed_test_cases = False
-get_most_failing_test_cases = False
+get_never_executed_test_cases = True
+get_most_failing_test_cases = True
+get_the_buggiest_test_cases = True
 
-api_requests = ApiRequests()
+api_requests = ToolApi()
 
-if get_test_cases_count:
-    print(f"Test cases count: {len(api_requests.cases)}")
-
-if get_runs_count:
-    print(f"Test runs count: {len(api_requests.runs)}")
+print("Hello ฅ՞•ﻌ•՞ฅ")
 
 if get_never_executed_test_cases:
-    not_executed_test_cases_list = api_requests.get_not_executed_cases_list()
+    not_executed_test_cases_list = api_requests.save_not_executed_cases_list()
 
 if get_most_failing_test_cases:
-    api_requests.get_most_failing_test_cases()
+    api_requests.save_most_failing_test_cases()
 
-pass
+if get_the_buggiest_test_cases:
+    api_requests.save_the_buggiest_tests()
+
