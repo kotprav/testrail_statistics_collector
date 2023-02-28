@@ -8,7 +8,6 @@ from lib.helpers.file_helper import write_list_of_dicts_to_file, write_list_to_f
 from lib.test_rail_objects.test_case import TestCase
 from lib.test_rail_objects.test_in_run import TestInRun
 from lib.test_rail_objects.test_in_run_with_case_info import TestInRunWithCaseInfo
-from lib.test_rail_objects.test_run import TestRun
 from path_constants import OUTPUT_FILES_DIR_PATH
 
 
@@ -17,17 +16,9 @@ class ToolApi:
         self.__api_requests = ApiRequests()
         self.__cache_config = CacheConfigReader()
 
-    @property
-    def cases(self) -> list[TestCase]:
-        return self.__api_requests.cases
-
-    @property
-    def runs(self) -> list[TestRun]:
-        return self.__api_requests.runs
-
-    def get_not_executed_cases_list(self):
+    def save_not_executed_cases_list(self):
         print("Getting never executed test cases...")
-        cases_ids: set[int] = set([case.id for case in self.cases])
+        cases_ids: set[int] = set([case.id for case in self.__api_requests.cases])
         executed_cases_ids_set: set[int] = self.__get_executed_cases_ids_list()
         not_executed_cases_ids_list: list[int] = self.__get_not_executed_cases_ids(cases_ids, executed_cases_ids_set)
 
@@ -36,7 +27,7 @@ class ToolApi:
 
         self.__write_info_about_not_executed_cases_list(not_executed_cases_list)
 
-    def get_most_failing_test_cases(self):
+    def save_most_failing_test_cases(self):
         print("Getting the most failing test cases in test runs...")
 
         failed_tests_with_extended_info_list: list[TestInRunWithCaseInfo] = self.__get_failed_tests_with_extended_info(
@@ -47,8 +38,7 @@ class ToolApi:
 
         self.__write_info_about_most_failing_test_cases(test_cases_usage_info, failed_tests_with_extended_info_list)
 
-    def get_the_buggiest_tests(self) -> list[
-        dict[str, int or list[str]]]:
+    def save_the_buggiest_tests(self):
         print("Getting the buggiest tests...")
         tests_with_defects_list: list[TestInRun] = self.__get_tests_with_defects_list()
 
@@ -58,8 +48,6 @@ class ToolApi:
             tests_with_defects_list)
 
         self.__save_info_about_the_buggiest_tests(failed_tests_with_bugs_list)
-
-        return failed_tests_with_bugs_list
 
     def __save_info_about_the_buggiest_tests(self, failed_tests_with_bugs_list: list[dict[str, int or list[str]]]):
         failed_tests_with_at_least_one_bug_list: list[
@@ -110,7 +98,7 @@ class ToolApi:
         self.__write_result_logs(output_file_name)
 
     def __get_test_case_by_test(self, test: TestInRun) -> TestCase or None:
-        matching_case_list: list[TestCase] = [case for case in self.cases if case.id == test.case_id]
+        matching_case_list: list[TestCase] = [case for case in self.__api_requests.cases if case.id == test.case_id]
 
         if matching_case_list:
             return matching_case_list[0]
@@ -152,7 +140,7 @@ class ToolApi:
         return not_executed_cases_ids_list
 
     def __get_test_cases_list_by_id_list(self, id_list: list[int] or set[int]) -> list[TestCase]:
-        return [case for case in self.cases if case.id in id_list]
+        return [case for case in self.__api_requests.cases if case.id in id_list]
 
     def __get_tests_with_defects_list(self) -> list[TestInRun]:
         return self.__api_requests.get_failed_tests_defects_list(
@@ -209,7 +197,7 @@ class ToolApi:
                                                   most_common_defect[0] in test_case_with_bug["defects"]]
 
             test_cases_titles_per_bug_list: list[dict[str, str or int]] = []
-            for case in self.cases:
+            for case in self.__api_requests.cases:
                 for test_case_per_bug in set(test_cases_per_bug_list):
                     if test_case_per_bug == case.id:
                         test_cases_titles_per_bug_list.append({"title": case.title, "case_id": test_case_per_bug})
