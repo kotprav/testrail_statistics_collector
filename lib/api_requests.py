@@ -12,7 +12,7 @@ from lib.test_rail_objects.test_run import TestRun
 from path_constants import CACHED_INFO_DIR_PATH
 
 
-class ApiRequests:
+class ApiRequests:  # pylint: disable=too-many-instance-attributes
     def __init__(self):
         self.__test_rail_config = TestRailConfigReader()
         self.__cache_config = CacheConfigReader()
@@ -23,7 +23,7 @@ class ApiRequests:
         self.__tests_with_defects_list: list[TestInRun] = []
         self.__list_with_all_tests_results: list[TestInRun] = []
         self.__failed_tests_list: list[TestInRun] = []
-        self.__failed_tests_defects_list: list[TestInRun] = []
+        self.__request_timeout_time = 5
 
     @property
     def cases(self) -> list[TestCase]:
@@ -59,10 +59,13 @@ class ApiRequests:
             for test_id in failed_tests_ids_list:
                 failed_test_results = requests.get(
                     f'{self.__test_rail_config.api_address}/get_results/{test_id}', headers=self.__headers,
-                    auth=self.__auth).json()
+                    auth=self.__auth, timeout=self.__request_timeout_time).json()
 
                 self.__write_network_logs("Request to get results of failed tests was sent")
-                [self.__tests_with_defects_list.append(TestInRun(test_id, failed_test)) for failed_test in
+                # [self.__tests_with_defects_list.append(TestInRun(test_id, failed_test)) for failed_test in
+                #  failed_test_results]
+
+                [self.__tests_with_defects_list.append(TestInRun(failed_test)) for failed_test in
                  failed_test_results]
 
                 write_list_of_dicts_to_file(cached_file_name,
@@ -73,7 +76,7 @@ class ApiRequests:
     def __get_tests_in_run(self, run_id: int) -> list[TestInRun]:
         response = requests.get(f'{self.__test_rail_config.api_address}/get_tests/{run_id}',
                                 headers=self.__headers,
-                                auth=self.__auth)
+                                auth=self.__auth, timeout=self.__request_timeout_time)
 
         self.__write_network_logs(f"Request to get tests in run with ID {run_id} was sent")
 
@@ -124,7 +127,7 @@ class ApiRequests:
             response = requests.get(
                 f'{self.__test_rail_config.api_address}/get_cases/{self.__test_rail_config.project_id}&suite_id={self.__test_rail_config.suite_id}',
                 headers=self.__headers,
-                auth=self.__auth)
+                auth=self.__auth, timeout=self.__request_timeout_time)
 
             self.__write_network_logs("Request to get cases was sent and received")
             cases_list: list[TestCase] = [TestCase(case) for case in response.json()]
@@ -148,7 +151,7 @@ class ApiRequests:
             response = requests.get(
                 f'{self.__test_rail_config.api_address}/get_runs/{self.__test_rail_config.project_id}',
                 headers=self.__headers,
-                auth=self.__auth)
+                auth=self.__auth, timeout=self.__request_timeout_time)
 
             self.__write_network_logs("Request to get runs was sent and received")
 
@@ -162,4 +165,3 @@ class ApiRequests:
     @staticmethod
     def __write_network_logs(message: str):
         print(f'---Network: {message}')
-

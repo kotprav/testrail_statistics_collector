@@ -1,6 +1,3 @@
-"""
-Path constants used across the app.
-"""
 import os
 
 MAIN_PROJECT_DIR_PATH = os.path.dirname(__file__)

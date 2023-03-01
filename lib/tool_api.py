@@ -3,7 +3,6 @@ import itertools
 import os
 
 from lib.api_requests import ApiRequests
-from lib.helpers.cache_config_reader import CacheConfigReader
 from lib.helpers.file_helper import write_list_of_dicts_to_file, write_list_to_file
 from lib.test_rail_objects.test_case import TestCase
 from lib.test_rail_objects.test_in_run import TestInRun
@@ -14,11 +13,10 @@ from path_constants import OUTPUT_FILES_DIR_PATH
 class ToolApi:
     def __init__(self):
         self.__api_requests = ApiRequests()
-        self.__cache_config = CacheConfigReader()
 
     def save_not_executed_cases_list(self):
         print("Getting never executed test cases...")
-        cases_ids: set[int] = set([case.id for case in self.__api_requests.cases])
+        cases_ids: set[int] = {case.id for case in self.__api_requests.cases}
         executed_cases_ids_set: set[int] = self.__get_executed_cases_ids_list()
         not_executed_cases_ids_list: list[int] = self.__get_not_executed_cases_ids(cases_ids, executed_cases_ids_set)
 
@@ -77,13 +75,13 @@ class ToolApi:
                                                    failed_tests_with_extended_info_list: list[TestInRunWithCaseInfo]):
         result_file_name: str = os.path.join(OUTPUT_FILES_DIR_PATH, "the_most_failing_test_cases_in_test_runs.txt")
 
-        with open(result_file_name, 'w') as f:
+        with open(result_file_name, 'w') as file:
             for info in test_cases_usage_info:
                 case_title: str = \
                     list(filter(lambda element: element.case_id == info[0], failed_tests_with_extended_info_list))[
                         0].case_title
 
-                f.write(f"{info[0]} {case_title}: {info[1]} times\n")
+                file.write(f"{info[0]} {case_title}: {info[1]} times\n")
 
         self.__write_result_logs(result_file_name)
 
@@ -106,9 +104,9 @@ class ToolApi:
 
     def __get_executed_cases_ids_list(self) -> set[int]:
         executed_cases_set = self.__get_test_cases_list_by_id_list(
-            set([test_in_run.case_id for test_in_run in self.__api_requests.test_results_from_all_runs]))
+            {test_in_run.case_id for test_in_run in self.__api_requests.test_results_from_all_runs})
 
-        executed_cases_ids_set: set[int] = set([case.id for case in executed_cases_set])
+        executed_cases_ids_set: set[int] = {case.id for case in executed_cases_set}
 
         return executed_cases_ids_set
 

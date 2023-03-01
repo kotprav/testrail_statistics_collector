@@ -12,7 +12,7 @@ api_requests = ToolApi()
 print("Hello ฅ՞•ﻌ•՞ฅ")
 
 if GET_NEVER_EXECUTED_TEST_CASES:
-    not_executed_test_cases_list = api_requests.save_not_executed_cases_list()
+    api_requests.save_not_executed_cases_list()
 
 if GET_MOST_FAILING_TEST_CASES:
     api_requests.save_most_failing_test_cases()
