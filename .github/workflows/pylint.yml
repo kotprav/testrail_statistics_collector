@@ -1,19 +1,36 @@
 name: Pylint
 
-on: [push]
+on: [ push ]
 
 jobs:
   build:
+    #    runs-on: ubuntu-latest
+    #    steps:
+    #      - name: Install Python, pipenv and Pipfile packages
+    #        uses: palewire/install-python-pipenv-pipfile@v3
+    #        with:
+    #          python-version: 3.9
+    #      - name: Analysing the code with pylint
+    #        run: |
+    #          pipenv run pylint $(git ls-files '*.py')
+    #      - name: Run unit tests
+    #        run: |
+    #          pytest
+
     runs-on: ubuntu-latest
     steps:
-    - name: Install Python, pipenv and Pipfile packages
-      uses: palewire/install-python-pipenv-pipfile@v3
-      with:
-        python-version: 3.9
-    - name: Analysing the code with pylint
-      run: |
-        pipenv run pylint $(git ls-files '*.py')
-    - name: Run unit tests
-      run: |
-        pytest
-
+      - name: Install Python
+        run: |
+          sudo apt-get update sudo apt-get install python3
+      - name: Install pipenv
+        run: |
+          python3 -m pip install pipenv
+      - name: Install packages
+        run: |
+        pipenv install --dev
+      - name: Run linting
+        run: |
+        pipenv run pylint <project_name>
+      - name: Run unit tests
+        run: |
+          pipenv run pytest tests
