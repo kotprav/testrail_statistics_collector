@@ -30,7 +30,7 @@ jobs:
           pipenv install --dev
       - name: Run linting
         run: |
-          pipenv run pylint <project_name>
+          pipenv run pylint testrail_statistics_collector
       - name: Run unit tests
         run: |
           pipenv run pytest tests
