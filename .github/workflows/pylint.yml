@@ -27,10 +27,10 @@ jobs:
           python3 -m pip install pipenv
       - name: Install packages
         run: |
-        pipenv install --dev
+          pipenv install --dev
       - name: Run linting
         run: |
-        pipenv run pylint <project_name>
+          pipenv run pylint <project_name>
       - name: Run unit tests
         run: |
           pipenv run pytest tests
