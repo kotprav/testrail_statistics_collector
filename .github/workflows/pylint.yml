@@ -10,14 +10,13 @@ jobs:
         python-version: ["3.8", "3.9", "3.10"]
     steps:
     - uses: actions/checkout@v3
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v3
+    - name: Install Python, pipenv and Pipfile packages
+      # You may pin to the exact commit or the version.
+      # uses: palewire/install-python-pipenv-pipfile@bbbd75e2eb923b7d3825c02417b00a9a72333ad4
+      uses: palewire/install-python-pipenv-pipfile@v3
       with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install pylint
+        # The version of Python to use
+        python-version: 3.9
     - name: Analysing the code with pylint
       run: |
         pylint $(git ls-files '*.py')
