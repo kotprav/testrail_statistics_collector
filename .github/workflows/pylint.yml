@@ -1,36 +1,40 @@
 name: Pylint
 
-on: [ push ]
+on: [push]
 
 jobs:
   build:
-    #    runs-on: ubuntu-latest
-    #    steps:
-    #      - name: Install Python, pipenv and Pipfile packages
-    #        uses: palewire/install-python-pipenv-pipfile@v3
-    #        with:
-    #          python-version: 3.9
-    #      - name: Analysing the code with pylint
-    #        run: |
-    #          pipenv run pylint $(git ls-files '*.py')
-    #      - name: Run unit tests
-    #        run: |
-    #          pytest
-
     runs-on: ubuntu-latest
     steps:
-      - name: Install Python
-        run: |
-          sudo apt-get install python3
+      - name: Check out repository code
+        uses: actions/checkout@v2
+
+      # Setup Python (faster than using Python container)
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.9"
+
       - name: Install pipenv
         run: |
-          python3 -m pip install pipenv
-      - name: Install packages
+          python -m pip install --upgrade pipenv wheel
+      - id: cache-pipenv
+        uses: actions/cache@v1
+        with:
+          path: ~/.local/share/virtualenvs
+          key: ${{ runner.os }}-pipenv-${{ hashFiles('**/Pipfile.lock') }}
+
+      - name: Install dependencies
+        if: steps.cache-pipenv.outputs.cache-hit != 'true'
         run: |
-          pipenv install --dev
-      - name: Run linting
+          pipenv install --deploy --dev
+      - name: Run test suite
         run: |
-          pipenv run pylint testrail_statistics_collector
-      - name: Run unit tests
+          pipenv run test
+
+      - name: Run linter
         run: |
-          pipenv run pytest tests
+          pipenv run lint
+      - name: Run formatting check
+        run: |
+          pipenv run format --check
