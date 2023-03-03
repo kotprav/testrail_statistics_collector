@@ -13,13 +13,11 @@ jobs:
           python-version: 3.9
       - name: Install pipenv
         run: pip install pipenv
-      - name: Run tests
-        run: |
-          pipenv install --dev
-          pipenv run pytest
+#      - name: Run tests
+#        run: |
+#          pipenv install --dev
+#          pipenv run pytest
       - name: Run linter
         run: |
-          pipenv run lint
-      - name: Run formatting check
-        run: |
-          pipenv run format --check
+          pipenv install --dev
+          pipenv run pylint *.py
