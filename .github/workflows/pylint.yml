@@ -24,7 +24,7 @@ jobs:
           pipenv install
       - name: Run test suite
         run: |
-          pipenv run test
+          pipenv run pytest
 
       - name: Run linter
         run: |
