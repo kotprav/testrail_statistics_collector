@@ -13,7 +13,3 @@ pylint = "*"
 
 [requires]
 python_version = "3.9"
-
-[scripts]
-tests = "pytest"
-lint = "pylint *.py"
