@@ -14,13 +14,13 @@ def read_list_of_dicts_from_file(file_path: str) -> list[dict["id": int, "title"
 
 
 def write_list_of_dicts_to_file(file_path: str, list_of_dicts: list):
-    with open(file_path, 'w') as f:
-        json.dump(list_of_dicts, f)
+    with open(file_path, 'w') as file:
+        json.dump(list_of_dicts, file)
 
 
-def write_list_to_file(file_path: str, list: list):
+def write_list_to_file(file_path: str, list_to_write: list):
     with open(file_path, 'w') as filehandle:
-        for list_item in list:
+        for list_item in list_to_write:
             filehandle.write(f'{list_item}\n')
 
 
