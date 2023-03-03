@@ -30,7 +30,7 @@ jobs:
 #          pipenv install
       - name: Run test suite
         run: |
-          pipenv run pytest
+          pytest
 
       - name: Run linter
         run: |
