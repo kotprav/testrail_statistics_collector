@@ -1,18 +1,18 @@
 class TestInRun:
-    def __init__(self, req_object: dict[str, int]):
+    def __init__(self, req_object: dict):
         self.__req_object = req_object
 
     @property
-    def test_id(self) -> int:
-        return self.__req_object["id"]
+    def test_id(self) -> int or None:
+        return self.__req_object["id"] if "id" in self.__req_object else None
 
     @property
-    def case_id(self) -> int:
-        return self.__req_object["case_id"]
+    def case_id(self) -> int or None:
+        return self.__req_object["case_id"] if "case_id" in self.__req_object else None
 
     @property
-    def status_id(self) -> int:
-        return self.__req_object["status_id"]
+    def status_id(self) -> int or None:
+        return self.__req_object["status_id"] if "status_id" in self.__req_object else None
 
     @property
     def defects(self) -> list[str]:
