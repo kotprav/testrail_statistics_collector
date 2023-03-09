@@ -3,7 +3,7 @@ class TestInRun:
         self.__req_object = req_object
 
     @property
-    def test_id(self) -> int or None:
+    def id(self) -> int or None:
         return self.__req_object["id"] if "id" in self.__req_object else None
 
     @property
@@ -30,4 +30,4 @@ class TestInRun:
 
     @property
     def full_info(self) -> dict[str, int]:
-        return {"id": self.test_id, "case_id": self.case_id, "status_id": self.status_id, "defects": self.defects}
+        return {"id": self.id, "case_id": self.case_id, "status_id": self.status_id, "defects": self.defects}

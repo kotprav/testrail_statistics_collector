@@ -42,14 +42,13 @@ class ToolApi:
 
         # merge failed tests with bugs list with information about test cases
         # example result: {'id': 123, 'case_id': 1234, 'status_id': 5, 'test_id': 12345, 'defects': ['JIRA-123']}
-        failed_tests_with_bugs_list: list[dict[str, int or list[str]]] = self.__get_failed_tests_with_bugs_list(
+        failed_tests_with_bugs_list: list[TestInRun] = self.__get_failed_tests_with_bugs_list(
             tests_with_defects_list)
 
         self.__save_info_about_the_buggiest_tests(failed_tests_with_bugs_list)
 
-    def __save_info_about_the_buggiest_tests(self, failed_tests_with_bugs_list: list[dict[str, int or list[str]]]):
-        failed_tests_with_at_least_one_bug_list: list[
-            dict[str, int or list[str]]] = self.__get_failed_tests_with_at_least_one_bug_list(
+    def __save_info_about_the_buggiest_tests(self, failed_tests_with_bugs_list: list[TestInRun]):
+        failed_tests_with_at_least_one_bug_list: list[TestInRun] = self.__get_failed_tests_with_at_least_one_bug_list(
             failed_tests_with_bugs_list)
 
         formatted_all_defects_list: list[str] = self.__get_all_defects_list(failed_tests_with_at_least_one_bug_list)
@@ -142,34 +141,53 @@ class ToolApi:
 
     def __get_tests_with_defects_list(self) -> list[TestInRun]:
         return self.__api_requests.get_failed_tests_defects_list(
-            [failed_test.test_id for failed_test in self.__api_requests.failed_tests])
+            [failed_test.id for failed_test in self.__api_requests.failed_tests])
 
-    def __get_failed_tests_with_bugs_list(self, tests_with_defects_list: list[TestInRun]) -> list[
-        dict[str, int or list[str]]]:
+    def __get_failed_tests_with_bugs_list(self, tests_with_defects_list: list[TestInRun]) -> list[TestInRun]:
         # merge failed tests with bugs list with information about test cases
         # example result: {'id': 123, 'case_id': 1234, 'status_id': 5, 'test_id': 12345, 'defects': ['JIRA-123']}
-        failed_tests_with_bugs_list: list[dict[str, int or list[str]]] = []
+        failed_tests_with_bugs_list: list[TestInRun] = []
+        ids_of_test_with_defects_list = [test_with_defect.id for test_with_defect in
+                                         tests_with_defects_list]  # TODO: issue with ids
+        ids_of_failed_tests_list = [failed_test.id for failed_test in
+                                    self.__api_requests.failed_tests]
 
-        for item1 in self.__api_requests.failed_tests:
-            for item2 in tests_with_defects_list:
-                if item1.test_id == item2["test_id"]:
-                    failed_tests_with_bugs_list.append({**item1.full_info, **item2})
+        if len(tests_with_defects_list) <= len(self.__api_requests.failed_tests):
+            for test_with_defect in tests_with_defects_list:
+                res = [{failed_test, test_with_defect} for failed_test in
+                       self.__api_requests.failed_tests if failed_test.id == test_with_defect.id]
 
-        for item1 in self.__api_requests.failed_tests:
-            if not any(d["test_id"] == item1.test_id for d in tests_with_defects_list):
-                failed_tests_with_bugs_list.append(item1)
+                intersected_elements_list = [TestInRun({**failed_test.full_info, **test_with_defect})
+                                             for
+                                             failed_test in
+                                             self.__api_requests.failed_tests if
+                                             failed_test.id == test_with_defect.id]
+
+                if res:
+                    failed_tests_with_bugs_list.append(intersected_elements_list)
+        else:
+            for failed_test in self.__api_requests.failed_tests:
+                intersected_elements_list = [TestInRun({**failed_test.full_info, **test_with_defect})
+                                             for
+                                             test_with_defect in
+                                             tests_with_defects_list if
+                                             failed_test.id == test_with_defect.id]
+
+                if intersected_elements_list:
+                    failed_tests_with_bugs_list.append(intersected_elements_list)
 
         return failed_tests_with_bugs_list
 
     @staticmethod
-    def __get_failed_tests_with_at_least_one_bug_list(failed_tests_with_bugs_list: list[dict[str, int or list[str]]]) -> \
-            list[dict[str, int or list[str]]]:
-        return [failed_test for failed_test in failed_tests_with_bugs_list if len(failed_test["defects"]) > 0]
+    def __get_failed_tests_with_at_least_one_bug_list(failed_tests_with_bugs_list: list[TestInRun]) -> \
+            list[TestInRun]:
+        return [failed_test for failed_test in failed_tests_with_bugs_list if len(failed_test.defects) > 0]
 
     @staticmethod
-    def __get_all_defects_list(failed_tests_with_at_least_one_bug_list: list[
-        dict[str, int or list[str]]]) -> list[str]:
-        all_defects_list: list[list[str]] = [d['defects'] for d in failed_tests_with_at_least_one_bug_list]
+    def __get_all_defects_list(failed_tests_with_at_least_one_bug_list: list[TestInRun]) -> list[str]:
+        all_defects_list: list[list[str]] = [failed_test.defects for failed_test in
+                                             failed_tests_with_at_least_one_bug_list]
+
         return list(itertools.chain.from_iterable(all_defects_list))
 
     @staticmethod
@@ -178,9 +196,9 @@ class ToolApi:
         return defects_count.most_common()
 
     @staticmethod
-    def __get_test_case_with_bugs_list(failed_tests_with_at_least_one_bug_list: list[dict[str, int or list[str]]]) -> \
+    def __get_test_case_with_bugs_list(failed_tests_with_at_least_one_bug_list: list[TestInRun]) -> \
             list[dict[str, int or list[str]]]:
-        return [{"case_id": failed_test["case_id"], "defects": failed_test["defects"]} for failed_test in
+        return [{"case_id": failed_test.case_id, "defects": failed_test.defects} for failed_test in
                 failed_tests_with_at_least_one_bug_list]
 
     def __get_bug_with_test_cases(self, most_common_defects: list[tuple[str, int]],

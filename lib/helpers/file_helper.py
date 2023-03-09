@@ -1,7 +1,7 @@
 import json
 
 
-def read_list_of_dicts_from_file(file_path: str) -> list[dict["id": int, "title": str, "link": str]]:
+def read_list_of_dicts_from_file(file_path: str) -> list[dict]:
     try:
         with open(file_path, encoding='utf-8') as data_file:
             data = json.loads(data_file.read())

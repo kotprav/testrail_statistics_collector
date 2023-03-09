@@ -9,7 +9,7 @@ class TestInRunWithCaseInfo:
 
     @property
     def test_id(self) -> int:
-        return self.__test.test_id
+        return self.__test.id
 
     @property
     def case_id(self) -> int:
