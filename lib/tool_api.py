@@ -146,37 +146,31 @@ class ToolApi:
     def __get_failed_tests_with_bugs_list(self, tests_with_defects_list: list[TestInRun]) -> list[TestInRun]:
         # merge failed tests with bugs list with information about test cases
         # example result: {'id': 123, 'case_id': 1234, 'status_id': 5, 'test_id': 12345, 'defects': ['JIRA-123']}
-        failed_tests_with_bugs_list: list[TestInRun] = []
-        ids_of_test_with_defects_list = [test_with_defect.id for test_with_defect in
-                                         tests_with_defects_list]  # TODO: issue with ids
-        ids_of_failed_tests_list = [failed_test.id for failed_test in
-                                    self.__api_requests.failed_tests]
-
         if len(tests_with_defects_list) <= len(self.__api_requests.failed_tests):
-            for test_with_defect in tests_with_defects_list:
-                res = [{failed_test, test_with_defect} for failed_test in
-                       self.__api_requests.failed_tests if failed_test.id == test_with_defect.id]
-
-                intersected_elements_list = [TestInRun({**failed_test.full_info, **test_with_defect})
-                                             for
-                                             failed_test in
-                                             self.__api_requests.failed_tests if
-                                             failed_test.id == test_with_defect.id]
-
-                if res:
-                    failed_tests_with_bugs_list.append(intersected_elements_list)
+            return self.__get_intersected_failed_tests_with_bugs_list(
+                self.__api_requests.failed_tests, tests_with_defects_list)
         else:
-            for failed_test in self.__api_requests.failed_tests:
-                intersected_elements_list = [TestInRun({**failed_test.full_info, **test_with_defect})
-                                             for
-                                             test_with_defect in
-                                             tests_with_defects_list if
-                                             failed_test.id == test_with_defect.id]
+            return self.__get_intersected_failed_tests_with_bugs_list(tests_with_defects_list,
+                                                                      self.__api_requests.failed_tests)
 
-                if intersected_elements_list:
-                    failed_tests_with_bugs_list.append(intersected_elements_list)
+    @staticmethod
+    def __get_intersected_failed_tests_with_bugs_list(bigger_list: list[TestInRun], smaller_list: list[TestInRun]):
+        failed_tests_with_bugs_list: list[list[TestInRun]] = []
 
-        return failed_tests_with_bugs_list
+        for smaller_list_item in smaller_list:
+            intersected_elements_list = [
+                TestInRun({"case_id": smaller_list_item.case_id, "id": smaller_list_item.id,
+                           "status_id": smaller_list_item.status_id,
+                           "defects": bigger_list_item.defects})
+                for
+                bigger_list_item in
+                bigger_list if
+                smaller_list_item.id == bigger_list_item.id]
+
+            if intersected_elements_list:
+                failed_tests_with_bugs_list.append(intersected_elements_list)
+
+        return [item for sublist in failed_tests_with_bugs_list for item in sublist]
 
     @staticmethod
     def __get_failed_tests_with_at_least_one_bug_list(failed_tests_with_bugs_list: list[TestInRun]) -> \

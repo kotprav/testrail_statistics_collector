@@ -25,7 +25,7 @@ class TestInRun:
             if "," in not_parsed_defects:
                 return not_parsed_defects.split(", ")
 
-            return [not_parsed_defects]
+            return not_parsed_defects
         return []
 
     @property
