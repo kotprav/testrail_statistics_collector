@@ -53,7 +53,8 @@ class ApiRequests:  # pylint: disable=too-many-instance-attributes
     def get_failed_tests_defects_list(self, failed_tests_ids_list: list[int]) -> list[TestInRun]:
         cached_file_name: str = os.path.join(CACHED_INFO_DIR_PATH, "cached_failed_tests_results.txt")
         if self.__cache_config.use_cached_failed_tests_results:
-            self.__tests_with_defects_list = read_list_of_dicts_from_file(cached_file_name)
+            self.__tests_with_defects_list = [TestInRun(test_with_defect) for test_with_defect in
+                                              read_list_of_dicts_from_file(cached_file_name)]
 
         if not self.__tests_with_defects_list:
             for test_id in failed_tests_ids_list:
@@ -61,15 +62,14 @@ class ApiRequests:  # pylint: disable=too-many-instance-attributes
                     f'{self.__test_rail_config.api_address}/get_results/{test_id}', headers=self.__headers,
                     auth=self.__auth, timeout=self.__request_timeout_time).json()
 
-                self.__write_network_logs("Request to get results of failed tests was sent")
-                # [self.__tests_with_defects_list.append(TestInRun(test_id, failed_test)) for failed_test in
-                #  failed_test_results]
+                self.__write_network_logs(f"Request to get results of failed test with id {test_id} was sent")
 
-                [self.__tests_with_defects_list.append(TestInRun(failed_test)) for failed_test in
-                 failed_test_results]
+                for failed_test in failed_test_results:
+                    failed_test["id"] = failed_test["test_id"]
+                    self.__tests_with_defects_list.append(TestInRun(failed_test))
 
-                write_list_of_dicts_to_file(cached_file_name,
-                                            [test_result.full_info for test_result in self.__tests_with_defects_list])
+            write_list_of_dicts_to_file(cached_file_name,
+                                        [test_result.full_info for test_result in self.__tests_with_defects_list])
 
         return self.__tests_with_defects_list
 
@@ -92,6 +92,7 @@ class ApiRequests:  # pylint: disable=too-many-instance-attributes
 
     def __get_test_results_from_all_test_runs(self) -> list[TestInRun]:
         cached_file_name: str = os.path.join(CACHED_INFO_DIR_PATH, "cached_tests_in_runs.txt")
+
         if self.__cache_config.use_cached_tests_results:
             return [TestInRun(list_element) for list_element in
                     read_list_of_dicts_from_file(cached_file_name)]

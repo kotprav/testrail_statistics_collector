@@ -6,20 +6,16 @@ class TestCase:
         self.__info = resp_object
 
     @property
-    def id(self) -> int:
-        return self.__info["id"] or 0
+    def id(self) -> int or None:
+        return self.__info["id"] if "id" in self.__info else None
 
     @property
     def is_deleted(self) -> bool or None:
-        if "is_deleted" in self.__info:
-            return self.__info["is_deleted"]
-        return None
+        return self.__info["is_deleted"] if "is_deleted" in self.__info else None
 
     @property
     def title(self) -> str or None:
-        if "title" in self.__info:
-            return self.__info["title"]
-        return None
+        return self.__info["title"] if "title" in self.__info else None
 
     @property
     def link(self) -> str:
