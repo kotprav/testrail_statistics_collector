@@ -6,6 +6,7 @@ name = "pypi"
 [packages]
 pyyaml = "*"
 requests = "*"
+pytest-mock = "*"
 
 [dev-packages]
 pytest = "*"

@@ -1,6 +1,7 @@
 import pytest
 
 from lib.api_requests import ApiRequests
+from lib.test_rail_objects.test_case import TestCase
 
 
 @pytest.fixture
@@ -8,7 +9,12 @@ def api_requests() -> ApiRequests:
     return ApiRequests()
 
 
-def test_cases_are_not_empty(api_requests):
+def test_cases_are_not_empty(api_requests, mocker):
+    return_value = [TestCase({'id': 111111111, "is_deleted": 0, 'title': 'Export'}),
+                    TestCase({'id': 111111110, "is_deleted": 0, 'title': 'Validation'})]
+
+    mocker.patch.object(api_requests, "get_response_about_all_test_cases", return_value=return_value)
+
     assert len(api_requests.cases) > 0
 
 

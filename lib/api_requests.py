@@ -125,18 +125,21 @@ class ApiRequests:  # pylint: disable=too-many-instance-attributes
         if not test_cases_list:
             # If test cases were never being loaded or setting "use_cached_test_cases" is false ->
             # send request to TestRail
-            response = requests.get(
-                f'{self.__test_rail_config.api_address}/get_cases/{self.__test_rail_config.project_id}&suite_id={self.__test_rail_config.suite_id}',
-                headers=self.__headers,
-                auth=self.__auth, timeout=self.__request_timeout_time)
-
-            self.__write_network_logs("Request to get cases was sent and received")
-            cases_list: list[TestCase] = [TestCase(case) for case in response.json()]
+            cases_list: list[TestCase] = self.get_response_about_all_test_cases()
             test_cases_list = [case for case in cases_list if not case.is_deleted]
             write_list_of_dicts_to_file(cached_file_name, [case.full_info for case in test_cases_list])
             self.__write_network_logs(f"Information about test cases is saved to {cached_file_name} file")
 
         return test_cases_list
+
+    def get_response_about_all_test_cases(self) -> list[TestCase]:
+        response = requests.get(
+            f'{self.__test_rail_config.api_address}/get_cases/{self.__test_rail_config.project_id}&suite_id={self.__test_rail_config.suite_id}',
+            headers=self.__headers,
+            auth=self.__auth, timeout=self.__request_timeout_time)
+
+        self.__write_network_logs("Request to get cases was sent and received")
+        return [TestCase(case) for case in response.json()]
 
     def __get_runs(self) -> list[TestRun]:
         self.__write_network_logs("Getting information about all test runs...")
