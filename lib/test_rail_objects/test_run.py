@@ -1,5 +1,5 @@
 class TestRun:
-    def __init__(self, req_object: dict["id", int]):
+    def __init__(self, req_object: dict):
         self.__object = req_object
 
     @property

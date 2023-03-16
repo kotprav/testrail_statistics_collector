@@ -153,21 +153,26 @@ class ApiRequests:  # pylint: disable=too-many-instance-attributes
             test_runs_list = [TestRun(run) for run in read_list_of_dicts_from_file(cached_file_name)]
 
         if not test_runs_list:
+            test_runs_list = self._get_response_about_all_test_runs()
             # If test runs were never being loaded or setting "use_cached_test_runs" is false ->
             # send request to TestRail
-            response = requests.get(
-                f'{self.__test_rail_config.api_address}/get_runs/{self.__test_rail_config.project_id}',
-                headers=self.__headers,
-                auth=self.__auth, timeout=self.__request_timeout_time)
-
-            self.__write_network_logs("Request to get runs was sent and received")
-
-            test_runs_list = [TestRun(run) for run in response.json()]
-            write_list_of_dicts_to_file(cached_file_name, [test_run.full_info for test_run in test_runs_list])
-
-            self.__write_network_logs(f"Information about test runs available is saved to {cached_file_name} file")
+            self._cache_run_info(test_runs_list, cached_file_name)
 
         return test_runs_list
+
+    def _cache_run_info(self, test_runs_list: list[TestRun], cached_file_name: str):
+        write_list_of_dicts_to_file(cached_file_name, [test_run.full_info for test_run in test_runs_list])
+        self.__write_network_logs(f"Information about test runs available is saved to {cached_file_name} file")
+
+    def _get_response_about_all_test_runs(self) -> list[TestRun]:
+        response = requests.get(
+            f'{self.__test_rail_config.api_address}/get_runs/{self.__test_rail_config.project_id}',
+            headers=self.__headers,
+            auth=self.__auth, timeout=self.__request_timeout_time)
+
+        self.__write_network_logs("Request to get runs was sent and received")
+
+        return [TestRun(run) for run in response.json()]
 
     @staticmethod
     def __write_network_logs(message: str):
