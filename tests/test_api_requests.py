@@ -2,6 +2,7 @@ import pytest
 
 from lib.api_requests import ApiRequests
 from lib.test_rail_objects.test_case import TestCase
+from lib.test_rail_objects.test_in_run import TestInRun
 from lib.test_rail_objects.test_run import TestRun
 
 
@@ -21,7 +22,7 @@ def test_cases_are_not_empty(api_requests, mocker):
                                  'expected': 'Happy life', 'additional_info': '',
                                  'refs': ''}], 'custom_mission': None, 'custom_session_charter': None}
 
-    second_test_case_info = {'id': 2, 'title': '"Happy Test Case #2',
+    second_test_case_info = {'id': 2, 'title': 'Happy Test Case #2',
                              'section_id': 3, 'template_id': 4, 'type_id': 5, 'priority_id': 1,
                              'milestone_id': None, 'refs': None, 'created_by': 6, 'created_on': 1669623477,
                              'updated_by': 7, 'updated_on': 1670314544, 'estimate': None, 'estimate_forecast': None,
@@ -31,8 +32,22 @@ def test_cases_are_not_empty(api_requests, mocker):
 
     mocker.patch.object(api_requests, "_get_response_about_all_test_cases", return_value=return_value)
     mocker.patch.object(api_requests, "_cache_test_cases_info")
+    cases = api_requests.cases
 
-    assert len(api_requests.cases) > 0
+    assert len(cases) > 0
+    first_case_res = cases[0]
+    assert first_case_res.id == 1
+    assert first_case_res.is_deleted == 0
+    assert "/cases/view/1" in first_case_res.link
+    assert first_case_res.title == 'Happy Test Case #1'
+    assert first_case_res.full_info
+
+    seconds_case_res = cases[1]
+    assert seconds_case_res.id == 2
+    assert seconds_case_res.is_deleted == 0
+    assert "/cases/view/2" in seconds_case_res.link
+    assert seconds_case_res.title == 'Happy Test Case #2'
+    assert seconds_case_res.full_info
 
 
 @pytest.mark.parametrize("return_value", [[]])
@@ -78,10 +93,25 @@ def test_runs_are_empty_when_test_rail_req_returned_nothing(api_requests, mocker
 
     assert len(api_requests.runs) == 0
 
-# def test_results_from_all_runs_are_not_empty(api_requests):
-#     assert len(api_requests.test_results_from_all_runs) > 0
-#
-#
+
+def test_results_from_all_runs_are_not_empty(api_requests, mocker):
+    first_test_info = {'id': 111111111, 'case_id': 333333333, 'status_id': 5, 'defects': ["JIRA-1234"]}
+    second_test_info = {'id': 222222222, 'case_id': 444444444, 'status_id': 6, 'defects': []}
+
+    return_value: list[TestInRun] = [TestInRun(first_test_info), TestInRun(second_test_info)]
+    mocker.patch.object(api_requests, "_get_test_runs_results", return_value=return_value)
+    mocker.patch.object(api_requests, "_cache_all_tests_results")
+
+    assert len(api_requests.test_results_from_all_runs) > 0
+
+
+@pytest.mark.parametrize("return_value", [[]])
+def test_results_from_all_runs_are_empty_when_test_rail_req_returned_nothing(api_requests, mocker, return_value):
+    mocker.patch.object(api_requests, "_get_test_runs_results", return_value=return_value)
+    mocker.patch.object(api_requests, "_cache_all_tests_results")
+
+    assert len(api_requests.test_results_from_all_runs) == 0
+
 # def test_failed_tests_are_not_empty(api_requests):
 #     assert len(api_requests.failed_tests) > 0
 #

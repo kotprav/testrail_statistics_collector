@@ -97,22 +97,25 @@ class ApiRequests:  # pylint: disable=too-many-instance-attributes
             return [TestInRun(list_element) for list_element in
                     read_list_of_dicts_from_file(cached_file_name)]
 
-        list_with_test_runs_results_lists: list[list[TestInRun]] = []
-
         self.__write_network_logs(f"Getting available information about tests from {len(self.runs)} test runs")
 
-        for run in self.runs:
-            tests_in_run_list: list[TestInRun] = self.__get_tests_in_run(run.id)
-            list_with_test_runs_results_lists.append(tests_in_run_list)
-
         # get one giant list of all tests results from multiple lists
-        all_tests_results_list = list(itertools.chain.from_iterable(list_with_test_runs_results_lists))
+        all_tests_results_list: list[TestInRun] = self._get_test_runs_results()
+        self._cache_all_tests_results(all_tests_results_list, cached_file_name)
+
+        return all_tests_results_list
+
+    def _cache_all_tests_results(self, all_tests_results_list: list[TestInRun], cached_file_name: str):
         write_list_of_dicts_to_file(cached_file_name,
                                     [test_result.full_info for test_result in all_tests_results_list])
 
         self.__write_network_logs(f"Information about all tests in test runs is saved to {cached_file_name} file")
 
-        return all_tests_results_list
+    def _get_test_runs_results(self) -> list[TestInRun]:
+        list_with_test_runs_results_lists: list[list[TestInRun]] = [self.__get_tests_in_run(run.id) for run in
+                                                                    self.runs]
+
+        return list(itertools.chain.from_iterable(list_with_test_runs_results_lists))
 
     def __get_cases(self) -> list[TestCase]:
         self.__write_network_logs("Getting information about all test cases...")
