@@ -37,8 +37,7 @@ class ApiRequests:  # pylint: disable=too-many-instance-attributes
             self.__runs = self.__get_runs()
         return self.__runs
 
-    @property
-    def test_results_from_all_runs(self) -> list[TestInRun]:
+    def get_test_results_from_all_runs(self) -> list[TestInRun]:
         if not self.__list_with_all_tests_results:
             self.__list_with_all_tests_results = self.__get_test_results_from_all_test_runs()
         return self.__list_with_all_tests_results
@@ -85,7 +84,7 @@ class ApiRequests:  # pylint: disable=too-many-instance-attributes
     def __get_failed_tests(self) -> list[TestInRun]:
         self.__write_network_logs("Getting test results from all test runs")
         failed_test_status_id = 5
-        failed_tests_list: list[TestInRun] = [test_in_run for test_in_run in self.test_results_from_all_runs if
+        failed_tests_list: list[TestInRun] = [test_in_run for test_in_run in self.get_test_results_from_all_runs() if
                                               test_in_run.status_id == failed_test_status_id]
 
         return failed_tests_list
