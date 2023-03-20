@@ -34,7 +34,7 @@ def test_cases_are_not_empty(api_requests, mocker):
     mocker.patch.object(api_requests, "_cache_test_cases_info")
     cases = api_requests.cases
 
-    assert len(cases) > 0
+    assert len(cases) == 2
     first_case_res = cases[0]
     assert first_case_res.id == 1
     assert first_case_res.is_deleted == 0
@@ -83,7 +83,16 @@ def test_runs_are_not_empty(api_requests, mocker):
     mocker.patch.object(api_requests, "_get_response_about_all_test_runs", return_value=return_value)
     mocker.patch.object(api_requests, "_cache_run_info")
 
-    assert len(api_requests.runs) > 0
+    runs = api_requests.runs
+    assert len(runs) == 2
+
+    first_test_run = runs[0]
+    second_test_run = runs[1]
+    assert first_test_run.id == 1
+    assert second_test_run.id == 2
+
+    assert first_test_run.full_info == {"id": 1}
+    assert second_test_run.full_info == {"id": 2}
 
 
 @pytest.mark.parametrize("return_value", [[]])
@@ -102,7 +111,23 @@ def test_results_from_all_runs_are_not_empty(api_requests, mocker):
     mocker.patch.object(api_requests, "_get_test_runs_results", return_value=return_value)
     mocker.patch.object(api_requests, "_cache_all_tests_results")
 
-    assert len(api_requests.test_results_from_all_runs) > 0
+    test_results_from_all_runs = api_requests.get_test_results_from_all_runs()
+    first_run_results = test_results_from_all_runs[0]
+    second_run_results = test_results_from_all_runs[1]
+    assert len(test_results_from_all_runs) == 2
+
+    assert first_run_results.case_id == 333333333
+    assert first_run_results.defects == ["JIRA-1234"]
+    assert first_run_results.id == 111111111
+    assert first_run_results.status_id == 5
+    assert first_run_results.full_info == {'id': 111111111, 'case_id': 333333333, 'status_id': 5,
+                                           'defects': ['JIRA-1234']}
+
+    assert second_run_results.case_id == 444444444
+    assert second_run_results.defects == []
+    assert second_run_results.id == 222222222
+    assert second_run_results.status_id == 6
+    assert second_run_results.full_info == {'id': 222222222, 'case_id': 444444444, 'status_id': 6, 'defects': []}
 
 
 @pytest.mark.parametrize("return_value", [[]])
@@ -110,12 +135,45 @@ def test_results_from_all_runs_are_empty_when_test_rail_req_returned_nothing(api
     mocker.patch.object(api_requests, "_get_test_runs_results", return_value=return_value)
     mocker.patch.object(api_requests, "_cache_all_tests_results")
 
-    assert len(api_requests.test_results_from_all_runs) == 0
+    assert len(api_requests.get_test_results_from_all_runs()) == 0
 
-# def test_failed_tests_are_not_empty(api_requests):
-#     assert len(api_requests.failed_tests) > 0
-#
-#
+
+def test_failed_tests_are_not_empty(api_requests, mocker):
+    first_failed_test_info = {'id': 111111111, 'case_id': 333333333, 'status_id': 5,
+                              'defects': ['JIRA-1234']}
+    second_not_failed_test_info = {'id': 222222222, 'case_id': 444444444, 'status_id': 6, 'defects': []}
+    third_failed_test_info = {'id': 111111112, 'case_id': 333333330, 'status_id': 5, 'defects': []}
+
+    return_value: list[TestInRun] = [TestInRun(first_failed_test_info), TestInRun(second_not_failed_test_info),
+                                     TestInRun(third_failed_test_info)]
+    mocker.patch.object(api_requests, "get_test_results_from_all_runs", return_value=return_value)
+
+    failed_tests_results = api_requests.failed_tests
+
+    assert len(failed_tests_results) == 2
+
+    first_failed_run_results = failed_tests_results[0]
+    second_failed_run_results = failed_tests_results[1]
+
+    assert first_failed_run_results.case_id == 333333333
+    assert first_failed_run_results.defects == ['JIRA-1234']
+    assert first_failed_run_results.id == 111111111
+    assert first_failed_run_results.status_id == 5
+    assert first_failed_run_results.full_info == {'id': 111111111, 'case_id': 333333333, 'status_id': 5,
+                                                  'defects': ['JIRA-1234']}
+
+    assert second_failed_run_results.case_id == 333333330
+    assert second_failed_run_results.defects == []
+    assert second_failed_run_results.id == 111111112
+    assert second_failed_run_results.status_id == 5
+    assert second_failed_run_results.full_info == {'id': 111111112, 'case_id': 333333330, 'status_id': 5, 'defects': []}
+
+
+def test_failed_test_results_from_all_runs_are_empty_when_no_results(api_requests, mocker):
+    mocker.patch.object(api_requests, "get_test_results_from_all_runs", return_value=[])
+
+    assert len(api_requests.failed_tests) == 0
+
 # def test_get_failed_tests_defects_list_is_not_empty(api_requests):
 #     failed_test_ids_list = [285085986, 285085926, 285085917, 285085919, 285085908]
 #     assert len(api_requests.get_failed_tests_defects_list(failed_test_ids_list)) > 0
