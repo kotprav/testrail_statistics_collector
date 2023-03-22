@@ -56,21 +56,37 @@ class ApiRequests:  # pylint: disable=too-many-instance-attributes
                                               read_list_of_dicts_from_file(cached_file_name)]
 
         if not self.__tests_with_defects_list:
-            for test_id in failed_tests_ids_list:
-                failed_test_results = requests.get(
-                    f'{self.__test_rail_config.api_address}/get_results/{test_id}', headers=self.__headers,
-                    auth=self.__auth, timeout=self.__request_timeout_time).json()
-
-                self.__write_network_logs(f"Request to get results of failed test with id {test_id} was sent")
-
-                for failed_test in failed_test_results:
-                    failed_test["id"] = failed_test["test_id"]
-                    self.__tests_with_defects_list.append(TestInRun(failed_test))
-
-            write_list_of_dicts_to_file(cached_file_name,
-                                        [test_result.full_info for test_result in self.__tests_with_defects_list])
+            self.__tests_with_defects_list = self._get_failed_test_results(failed_tests_ids_list)
+            self._cache_failed_tests_defects_list(cached_file_name)
 
         return self.__tests_with_defects_list
+
+    def _get_failed_test_results(self, failed_tests_ids_list: list[int]) -> list[TestInRun]:
+        test_results_list: list[TestInRun] = []
+        for test_id in failed_tests_ids_list:
+            failed_test_results = self._get_failed_test_results_response(test_id)
+
+            for failed_test in failed_test_results:
+                failed_test["id"] = failed_test["test_id"]
+                failed_test_in_run = TestInRun(failed_test)
+
+                if failed_test_in_run not in test_results_list:
+                    test_results_list.append(failed_test_in_run)
+
+        return test_results_list
+
+    def _cache_failed_tests_defects_list(self, cached_file_name):
+        write_list_of_dicts_to_file(cached_file_name,
+                                    [test_result.full_info for test_result in self.__tests_with_defects_list])
+
+    def _get_failed_test_results_response(self, test_id: int):
+        failed_test_results = requests.get(
+            f'{self.__test_rail_config.api_address}/get_results/{test_id}', headers=self.__headers,
+            auth=self.__auth, timeout=self.__request_timeout_time).json()
+
+        self.__write_network_logs(f"Request to get results of failed test with id {test_id} was sent")
+
+        return failed_test_results
 
     def __get_tests_in_run(self, run_id: int) -> list[TestInRun]:
         response = requests.get(f'{self.__test_rail_config.api_address}/get_tests/{run_id}',

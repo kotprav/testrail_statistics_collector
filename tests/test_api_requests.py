@@ -174,6 +174,39 @@ def test_failed_test_results_from_all_runs_are_empty_when_no_results(api_request
 
     assert len(api_requests.failed_tests) == 0
 
-# def test_get_failed_tests_defects_list_is_not_empty(api_requests):
-#     failed_test_ids_list = [285085986, 285085926, 285085917, 285085919, 285085908]
-#     assert len(api_requests.get_failed_tests_defects_list(failed_test_ids_list)) > 0
+
+def test_get_failed_tests_defects_list_is_not_empty(api_requests, mocker):
+    first_failed_test_result = [{'id': 1111111111, 'test_id': 1212121212, 'status_id': 5, 'created_on': 1678968274,
+                                 'assignedto_id': None,
+                                 'comment': None, 'version': None, 'elapsed': None, 'defects': 'JIRA-123',
+                                 'created_by': 2948,
+                                 'custom_step_results': [{
+                                     'content': 'Step 1',
+                                     'expected': '', 'actual': '', 'additional_info': '', 'refs': '', 'status_id': 3},
+                                     {'content': 'Step 2',
+                                      'expected': 'Expected 2',
+                                      'actual': '', 'additional_info': '', 'refs': '', 'status_id': 3},
+                                     {'content': 'Step 3',
+                                      'expected': 'Expected 3',
+                                      'actual': '', 'additional_info': '', 'refs': '', 'status_id': 3},
+                                     {
+                                         'content': 'Step 4',
+                                         'expected': 'Expected 4',
+                                         'actual': '', 'additional_info': '', 'refs': '', 'status_id': 3}, {
+                                         'content': 'Content 4',
+                                         'expected': 'Expected 4',
+                                         'actual': '', 'additional_info': '', 'refs': '', 'status_id': 3}],
+                                 'attachment_ids': []}]
+
+    mocker.patch.object(api_requests, "_get_failed_test_results_response",
+                        return_value=first_failed_test_result)
+    mocker.patch.object(api_requests, "_cache_failed_tests_defects_list")
+    failed_tests_defects_list = api_requests.get_failed_tests_defects_list([1111111111])
+
+    assert len(failed_tests_defects_list) == 1
+    failed_test_defects = failed_tests_defects_list[0]
+    assert failed_test_defects.case_id is None
+    assert failed_test_defects.defects == 'JIRA-123'
+    assert failed_test_defects.full_info == {'id': 1212121212, 'case_id': None, 'status_id': 5, 'defects': 'JIRA-123'}
+    assert failed_test_defects.id == 1212121212
+    assert failed_test_defects.status_id == 5
