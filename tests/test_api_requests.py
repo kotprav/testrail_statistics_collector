@@ -210,3 +210,11 @@ def test_get_failed_tests_defects_list_is_not_empty(api_requests, mocker):
     assert failed_test_defects.full_info == {'id': 1212121212, 'case_id': None, 'status_id': 5, 'defects': 'JIRA-123'}
     assert failed_test_defects.id == 1212121212
     assert failed_test_defects.status_id == 5
+
+
+def test_get_failed_tests_defects_list_is_empty_when_no_results_returned(api_requests, mocker):
+    mocker.patch.object(api_requests, "_get_failed_test_results_response",
+                        return_value=[])
+    mocker.patch.object(api_requests, "_cache_failed_tests_defects_list")
+
+    assert len(api_requests.get_failed_tests_defects_list([])) == 0

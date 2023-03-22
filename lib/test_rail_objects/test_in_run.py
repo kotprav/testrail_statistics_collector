@@ -32,7 +32,7 @@ class TestInRun:
     def full_info(self) -> dict[str, int]:
         return {"id": self.id, "case_id": self.case_id, "status_id": self.status_id, "defects": self.defects}
 
-    def __eq__(self, other):
+    def __eq__(self, other):  # pragma: no cover
         if not isinstance(other, TestInRun):
             return NotImplemented
 

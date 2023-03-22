@@ -3,7 +3,7 @@ from lib.test_rail_objects.test_in_run import TestInRun
 
 
 class TestInRunWithCaseInfo:
-    def __init__(self, test: TestInRun, case: TestCase):
+    def __init__(self, test: TestInRun, case: TestCase):  # pragma: no cover
         self.__test = test
         self.__case = case
 

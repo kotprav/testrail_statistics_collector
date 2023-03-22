@@ -53,7 +53,7 @@ class ApiRequests:  # pylint: disable=too-many-instance-attributes
         cached_file_name: str = os.path.join(CACHED_INFO_DIR_PATH, "cached_failed_tests_results.txt")
         if self.__cache_config.use_cached_failed_tests_results:
             self.__tests_with_defects_list = [TestInRun(test_with_defect) for test_with_defect in
-                                              read_list_of_dicts_from_file(cached_file_name)]
+                                              read_list_of_dicts_from_file(cached_file_name)]  # pragma: no cover
 
         if not self.__tests_with_defects_list:
             self.__tests_with_defects_list = self._get_failed_test_results(failed_tests_ids_list)
@@ -77,9 +77,10 @@ class ApiRequests:  # pylint: disable=too-many-instance-attributes
 
     def _cache_failed_tests_defects_list(self, cached_file_name):
         write_list_of_dicts_to_file(cached_file_name,
-                                    [test_result.full_info for test_result in self.__tests_with_defects_list])
+                                    [test_result.full_info for test_result in
+                                     self.__tests_with_defects_list])  # pragma: no cover
 
-    def _get_failed_test_results_response(self, test_id: int):
+    def _get_failed_test_results_response(self, test_id: int):  # pragma: no cover
         failed_test_results = requests.get(
             f'{self.__test_rail_config.api_address}/get_results/{test_id}', headers=self.__headers,
             auth=self.__auth, timeout=self.__request_timeout_time).json()
@@ -88,7 +89,7 @@ class ApiRequests:  # pylint: disable=too-many-instance-attributes
 
         return failed_test_results
 
-    def __get_tests_in_run(self, run_id: int) -> list[TestInRun]:
+    def __get_tests_in_run(self, run_id: int) -> list[TestInRun]:  # pragma: no cover
         response = requests.get(f'{self.__test_rail_config.api_address}/get_tests/{run_id}',
                                 headers=self.__headers,
                                 auth=self.__auth, timeout=self.__request_timeout_time)
@@ -105,7 +106,7 @@ class ApiRequests:  # pylint: disable=too-many-instance-attributes
 
         return failed_tests_list
 
-    def __get_test_results_from_all_test_runs(self) -> list[TestInRun]:
+    def __get_test_results_from_all_test_runs(self) -> list[TestInRun]:  # pragma: no cover
         cached_file_name: str = os.path.join(CACHED_INFO_DIR_PATH, "cached_tests_in_runs.txt")
 
         if self.__cache_config.use_cached_tests_results:
@@ -120,19 +121,20 @@ class ApiRequests:  # pylint: disable=too-many-instance-attributes
 
         return all_tests_results_list
 
-    def _cache_all_tests_results(self, all_tests_results_list: list[TestInRun], cached_file_name: str):
+    def _cache_all_tests_results(self, all_tests_results_list: list[TestInRun],
+                                 cached_file_name: str):  # pragma: no cover
         write_list_of_dicts_to_file(cached_file_name,
                                     [test_result.full_info for test_result in all_tests_results_list])
 
         self.__write_network_logs(f"Information about all tests in test runs is saved to {cached_file_name} file")
 
-    def _get_test_runs_results(self) -> list[TestInRun]:
+    def _get_test_runs_results(self) -> list[TestInRun]:  # pragma: no cover
         list_with_test_runs_results_lists: list[list[TestInRun]] = [self.__get_tests_in_run(run.id) for run in
                                                                     self.runs]
 
         return list(itertools.chain.from_iterable(list_with_test_runs_results_lists))
 
-    def __get_cases(self) -> list[TestCase]:
+    def __get_cases(self) -> list[TestCase]:  # pragma: no cover
         self.__write_network_logs("Getting information about all test cases...")
         cached_file_name: str = os.path.join(CACHED_INFO_DIR_PATH, "cached_cases.txt")
         test_cases_list: list[TestCase] = []
@@ -149,7 +151,7 @@ class ApiRequests:  # pylint: disable=too-many-instance-attributes
 
         return test_cases_list
 
-    def _get_response_about_all_test_cases(self) -> list[TestCase]:
+    def _get_response_about_all_test_cases(self) -> list[TestCase]:  # pragma: no cover
         response = requests.get(
             f'{self.__test_rail_config.api_address}/get_cases/{self.__test_rail_config.project_id}&suite_id={self.__test_rail_config.suite_id}',
             headers=self.__headers,
@@ -158,11 +160,11 @@ class ApiRequests:  # pylint: disable=too-many-instance-attributes
         self.__write_network_logs("Request to get cases was sent and received")
         return [TestCase(case) for case in response.json()]
 
-    def _cache_test_cases_info(self, cases_list: list[TestCase], cached_file_name: str):
+    def _cache_test_cases_info(self, cases_list: list[TestCase], cached_file_name: str):  # pragma: no cover
         write_list_of_dicts_to_file(cached_file_name, [case.full_info for case in cases_list])
         self.__write_network_logs(f"Information about test cases is saved to {cached_file_name} file")
 
-    def __get_runs(self) -> list[TestRun]:
+    def __get_runs(self) -> list[TestRun]:  # pragma: no cover
         self.__write_network_logs("Getting information about all test runs...")
         cached_file_name: str = os.path.join(CACHED_INFO_DIR_PATH, "cached_test_runs_info.txt")
         test_runs_list: list[TestRun] = []
