@@ -13,7 +13,7 @@ def read_list_of_dicts_from_file(file_path: str) -> list[dict]:  # pragma: no co
     return []
 
 
-def write_list_of_dicts_to_file(file_path: str, list_of_dicts: list):
+def write_list_of_dicts_to_file(file_path: str, list_of_dicts: list):  # pragma: no cover
     with open(file_path, 'w') as file:
         json.dump(list_of_dicts, file)
 

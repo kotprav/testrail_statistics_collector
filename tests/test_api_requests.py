@@ -31,7 +31,6 @@ def test_cases_are_not_empty(api_requests, mocker):
     return_value = [TestCase(first_test_case_info), TestCase(second_test_case_info)]
 
     mocker.patch.object(api_requests, "_get_response_about_all_test_cases", return_value=return_value)
-    mocker.patch.object(api_requests, "_cache_test_cases_info")
     cases = api_requests.cases
 
     assert len(cases) == 2
@@ -53,7 +52,6 @@ def test_cases_are_not_empty(api_requests, mocker):
 @pytest.mark.parametrize("return_value", [[]])
 def test_cases_are_empty_when_test_rail_req_returned_nothing(api_requests, mocker, return_value):
     mocker.patch.object(api_requests, "_get_response_about_all_test_cases", return_value=return_value)
-    mocker.patch.object(api_requests, "_cache_test_cases_info")
 
     assert len(api_requests.cases) == 0
 
@@ -81,7 +79,6 @@ def test_runs_are_not_empty(api_requests, mocker):
 
     return_value = [TestRun(first_run_info), TestRun(second_run_info)]
     mocker.patch.object(api_requests, "_get_response_about_all_test_runs", return_value=return_value)
-    mocker.patch.object(api_requests, "_cache_run_info")
 
     runs = api_requests.runs
     assert len(runs) == 2
@@ -98,7 +95,6 @@ def test_runs_are_not_empty(api_requests, mocker):
 @pytest.mark.parametrize("return_value", [[]])
 def test_runs_are_empty_when_test_rail_req_returned_nothing(api_requests, mocker, return_value):
     mocker.patch.object(api_requests, "_get_response_about_all_test_runs", return_value=return_value)
-    mocker.patch.object(api_requests, "_cache_run_info")
 
     assert len(api_requests.runs) == 0
 
@@ -109,7 +105,6 @@ def test_results_from_all_runs_are_not_empty(api_requests, mocker):
 
     return_value: list[TestInRun] = [TestInRun(first_test_info), TestInRun(second_test_info)]
     mocker.patch.object(api_requests, "_get_test_runs_results", return_value=return_value)
-    mocker.patch.object(api_requests, "_cache_all_tests_results")
 
     test_results_from_all_runs = api_requests.get_test_results_from_all_runs()
     first_run_results = test_results_from_all_runs[0]
@@ -133,7 +128,6 @@ def test_results_from_all_runs_are_not_empty(api_requests, mocker):
 @pytest.mark.parametrize("return_value", [[]])
 def test_results_from_all_runs_are_empty_when_test_rail_req_returned_nothing(api_requests, mocker, return_value):
     mocker.patch.object(api_requests, "_get_test_runs_results", return_value=return_value)
-    mocker.patch.object(api_requests, "_cache_all_tests_results")
 
     assert len(api_requests.get_test_results_from_all_runs()) == 0
 
@@ -200,7 +194,6 @@ def test_get_failed_tests_defects_list_is_not_empty(api_requests, mocker):
 
     mocker.patch.object(api_requests, "_get_failed_test_results_response",
                         return_value=first_failed_test_result)
-    mocker.patch.object(api_requests, "_cache_failed_tests_defects_list")
     failed_tests_defects_list = api_requests.get_failed_tests_defects_list([1111111111])
 
     assert len(failed_tests_defects_list) == 1
@@ -215,6 +208,5 @@ def test_get_failed_tests_defects_list_is_not_empty(api_requests, mocker):
 def test_get_failed_tests_defects_list_is_empty_when_no_results_returned(api_requests, mocker):
     mocker.patch.object(api_requests, "_get_failed_test_results_response",
                         return_value=[])
-    mocker.patch.object(api_requests, "_cache_failed_tests_defects_list")
 
     assert len(api_requests.get_failed_tests_defects_list([])) == 0
