@@ -103,7 +103,7 @@ class ToolApi:
 
     def __get_executed_cases_ids_list(self) -> set[int]:
         executed_cases_set = self.__get_test_cases_list_by_id_list(
-            {test_in_run.case_id for test_in_run in self.__api_requests.test_results_from_all_runs})
+            {test_in_run.case_id for test_in_run in self.__api_requests.get_test_results_from_all_runs()})
 
         executed_cases_ids_set: set[int] = {case.id for case in executed_cases_set}
 

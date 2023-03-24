@@ -6,7 +6,7 @@ from path_constants import CONFIGS_DIR_PATH
 
 
 class TestRailConfigReader:
-    def __init__(self):
+    def __init__(self):  # pragma: no cover
         with open(os.path.join(CONFIGS_DIR_PATH, "test-rail-config.yaml"),
                   "r") as stream:
             try:
@@ -35,5 +35,5 @@ class TestRailConfigReader:
         return self.__config["project_id"]
 
     @property
-    def suite_id(self) -> str:
+    def suite_id(self) -> str:  # pragma: no cover
         return self.__config["suite_id"]

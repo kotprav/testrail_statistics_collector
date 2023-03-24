@@ -6,6 +6,8 @@ name = "pypi"
 [packages]
 pyyaml = "*"
 requests = "*"
+pytest-mock = "*"
+pytest-cov = "*"
 
 [dev-packages]
 pytest = "*"
@@ -16,3 +18,4 @@ python_version = "3.9"
 
 [scripts]
 test = "pytest"
+coverage = "coverage run -m pytest && coverage report -m"

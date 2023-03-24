@@ -37,8 +37,7 @@ class ApiRequests:  # pylint: disable=too-many-instance-attributes
             self.__runs = self.__get_runs()
         return self.__runs
 
-    @property
-    def test_results_from_all_runs(self) -> list[TestInRun]:
+    def get_test_results_from_all_runs(self) -> list[TestInRun]:
         if not self.__list_with_all_tests_results:
             self.__list_with_all_tests_results = self.__get_test_results_from_all_test_runs()
         return self.__list_with_all_tests_results
@@ -54,26 +53,43 @@ class ApiRequests:  # pylint: disable=too-many-instance-attributes
         cached_file_name: str = os.path.join(CACHED_INFO_DIR_PATH, "cached_failed_tests_results.txt")
         if self.__cache_config.use_cached_failed_tests_results:
             self.__tests_with_defects_list = [TestInRun(test_with_defect) for test_with_defect in
-                                              read_list_of_dicts_from_file(cached_file_name)]
+                                              read_list_of_dicts_from_file(cached_file_name)]  # pragma: no cover
 
         if not self.__tests_with_defects_list:
-            for test_id in failed_tests_ids_list:
-                failed_test_results = requests.get(
-                    f'{self.__test_rail_config.api_address}/get_results/{test_id}', headers=self.__headers,
-                    auth=self.__auth, timeout=self.__request_timeout_time).json()
-
-                self.__write_network_logs(f"Request to get results of failed test with id {test_id} was sent")
-
-                for failed_test in failed_test_results:
-                    failed_test["id"] = failed_test["test_id"]
-                    self.__tests_with_defects_list.append(TestInRun(failed_test))
-
-            write_list_of_dicts_to_file(cached_file_name,
-                                        [test_result.full_info for test_result in self.__tests_with_defects_list])
+            self.__tests_with_defects_list = self._get_failed_test_results(failed_tests_ids_list)
+            self._cache_failed_tests_defects_list(cached_file_name)
 
         return self.__tests_with_defects_list
 
-    def __get_tests_in_run(self, run_id: int) -> list[TestInRun]:
+    def _get_failed_test_results(self, failed_tests_ids_list: list[int]) -> list[TestInRun]:
+        test_results_list: list[TestInRun] = []
+        for test_id in failed_tests_ids_list:
+            failed_test_results = self._get_failed_test_results_response(test_id)
+
+            for failed_test in failed_test_results:
+                failed_test["id"] = failed_test["test_id"]
+                failed_test_in_run = TestInRun(failed_test)
+
+                if failed_test_in_run not in test_results_list:
+                    test_results_list.append(failed_test_in_run)
+
+        return test_results_list
+
+    def _cache_failed_tests_defects_list(self, cached_file_name):
+        write_list_of_dicts_to_file(cached_file_name,
+                                    [test_result.full_info for test_result in
+                                     self.__tests_with_defects_list])  # pragma: no cover
+
+    def _get_failed_test_results_response(self, test_id: int):  # pragma: no cover
+        failed_test_results = requests.get(
+            f'{self.__test_rail_config.api_address}/get_results/{test_id}', headers=self.__headers,
+            auth=self.__auth, timeout=self.__request_timeout_time).json()
+
+        self.__write_network_logs(f"Request to get results of failed test with id {test_id} was sent")
+
+        return failed_test_results
+
+    def __get_tests_in_run(self, run_id: int) -> list[TestInRun]:  # pragma: no cover
         response = requests.get(f'{self.__test_rail_config.api_address}/get_tests/{run_id}',
                                 headers=self.__headers,
                                 auth=self.__auth, timeout=self.__request_timeout_time)
@@ -85,36 +101,40 @@ class ApiRequests:  # pylint: disable=too-many-instance-attributes
     def __get_failed_tests(self) -> list[TestInRun]:
         self.__write_network_logs("Getting test results from all test runs")
         failed_test_status_id = 5
-        failed_tests_list: list[TestInRun] = [test_in_run for test_in_run in self.test_results_from_all_runs if
+        failed_tests_list: list[TestInRun] = [test_in_run for test_in_run in self.get_test_results_from_all_runs() if
                                               test_in_run.status_id == failed_test_status_id]
 
         return failed_tests_list
 
-    def __get_test_results_from_all_test_runs(self) -> list[TestInRun]:
+    def __get_test_results_from_all_test_runs(self) -> list[TestInRun]:  # pragma: no cover
         cached_file_name: str = os.path.join(CACHED_INFO_DIR_PATH, "cached_tests_in_runs.txt")
 
         if self.__cache_config.use_cached_tests_results:
             return [TestInRun(list_element) for list_element in
                     read_list_of_dicts_from_file(cached_file_name)]
 
-        list_with_test_runs_results_lists: list[list[TestInRun]] = []
-
         self.__write_network_logs(f"Getting available information about tests from {len(self.runs)} test runs")
 
-        for run in self.runs:
-            tests_in_run_list: list[TestInRun] = self.__get_tests_in_run(run.id)
-            list_with_test_runs_results_lists.append(tests_in_run_list)
-
         # get one giant list of all tests results from multiple lists
-        all_tests_results_list = list(itertools.chain.from_iterable(list_with_test_runs_results_lists))
+        all_tests_results_list: list[TestInRun] = self._get_test_runs_results()
+        self._cache_all_tests_results(all_tests_results_list, cached_file_name)
+
+        return all_tests_results_list
+
+    def _cache_all_tests_results(self, all_tests_results_list: list[TestInRun],
+                                 cached_file_name: str):  # pragma: no cover
         write_list_of_dicts_to_file(cached_file_name,
                                     [test_result.full_info for test_result in all_tests_results_list])
 
         self.__write_network_logs(f"Information about all tests in test runs is saved to {cached_file_name} file")
 
-        return all_tests_results_list
+    def _get_test_runs_results(self) -> list[TestInRun]:  # pragma: no cover
+        list_with_test_runs_results_lists: list[list[TestInRun]] = [self.__get_tests_in_run(run.id) for run in
+                                                                    self.runs]
 
-    def __get_cases(self) -> list[TestCase]:
+        return list(itertools.chain.from_iterable(list_with_test_runs_results_lists))
+
+    def __get_cases(self) -> list[TestCase]:  # pragma: no cover
         self.__write_network_logs("Getting information about all test cases...")
         cached_file_name: str = os.path.join(CACHED_INFO_DIR_PATH, "cached_cases.txt")
         test_cases_list: list[TestCase] = []
@@ -125,20 +145,26 @@ class ApiRequests:  # pylint: disable=too-many-instance-attributes
         if not test_cases_list:
             # If test cases were never being loaded or setting "use_cached_test_cases" is false ->
             # send request to TestRail
-            response = requests.get(
-                f'{self.__test_rail_config.api_address}/get_cases/{self.__test_rail_config.project_id}&suite_id={self.__test_rail_config.suite_id}',
-                headers=self.__headers,
-                auth=self.__auth, timeout=self.__request_timeout_time)
-
-            self.__write_network_logs("Request to get cases was sent and received")
-            cases_list: list[TestCase] = [TestCase(case) for case in response.json()]
+            cases_list: list[TestCase] = self._get_response_about_all_test_cases()
             test_cases_list = [case for case in cases_list if not case.is_deleted]
-            write_list_of_dicts_to_file(cached_file_name, [case.full_info for case in test_cases_list])
-            self.__write_network_logs(f"Information about test cases is saved to {cached_file_name} file")
+            self._cache_test_cases_info(cases_list, cached_file_name)
 
         return test_cases_list
 
-    def __get_runs(self) -> list[TestRun]:
+    def _get_response_about_all_test_cases(self) -> list[TestCase]:  # pragma: no cover
+        response = requests.get(
+            f'{self.__test_rail_config.api_address}/get_cases/{self.__test_rail_config.project_id}&suite_id={self.__test_rail_config.suite_id}',
+            headers=self.__headers,
+            auth=self.__auth, timeout=self.__request_timeout_time)
+
+        self.__write_network_logs("Request to get cases was sent and received")
+        return [TestCase(case) for case in response.json()]
+
+    def _cache_test_cases_info(self, cases_list: list[TestCase], cached_file_name: str):  # pragma: no cover
+        write_list_of_dicts_to_file(cached_file_name, [case.full_info for case in cases_list])
+        self.__write_network_logs(f"Information about test cases is saved to {cached_file_name} file")
+
+    def __get_runs(self) -> list[TestRun]:  # pragma: no cover
         self.__write_network_logs("Getting information about all test runs...")
         cached_file_name: str = os.path.join(CACHED_INFO_DIR_PATH, "cached_test_runs_info.txt")
         test_runs_list: list[TestRun] = []
@@ -147,21 +173,26 @@ class ApiRequests:  # pylint: disable=too-many-instance-attributes
             test_runs_list = [TestRun(run) for run in read_list_of_dicts_from_file(cached_file_name)]
 
         if not test_runs_list:
+            test_runs_list = self._get_response_about_all_test_runs()
             # If test runs were never being loaded or setting "use_cached_test_runs" is false ->
             # send request to TestRail
-            response = requests.get(
-                f'{self.__test_rail_config.api_address}/get_runs/{self.__test_rail_config.project_id}',
-                headers=self.__headers,
-                auth=self.__auth, timeout=self.__request_timeout_time)
-
-            self.__write_network_logs("Request to get runs was sent and received")
-
-            test_runs_list = [TestRun(run) for run in response.json()]
-            write_list_of_dicts_to_file(cached_file_name, [test_run.full_info for test_run in test_runs_list])
-
-            self.__write_network_logs(f"Information about test runs available is saved to {cached_file_name} file")
+            self._cache_run_info(test_runs_list, cached_file_name)
 
         return test_runs_list
+
+    def _cache_run_info(self, test_runs_list: list[TestRun], cached_file_name: str):
+        write_list_of_dicts_to_file(cached_file_name, [test_run.full_info for test_run in test_runs_list])
+        self.__write_network_logs(f"Information about test runs available is saved to {cached_file_name} file")
+
+    def _get_response_about_all_test_runs(self) -> list[TestRun]:
+        response = requests.get(
+            f'{self.__test_rail_config.api_address}/get_runs/{self.__test_rail_config.project_id}',
+            headers=self.__headers,
+            auth=self.__auth, timeout=self.__request_timeout_time)
+
+        self.__write_network_logs("Request to get runs was sent and received")
+
+        return [TestRun(run) for run in response.json()]
 
     @staticmethod
     def __write_network_logs(message: str):

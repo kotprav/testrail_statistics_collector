@@ -31,3 +31,9 @@ class TestInRun:
     @property
     def full_info(self) -> dict[str, int]:
         return {"id": self.id, "case_id": self.case_id, "status_id": self.status_id, "defects": self.defects}
+
+    def __eq__(self, other):  # pragma: no cover
+        if not isinstance(other, TestInRun):
+            return NotImplemented
+
+        return self.id == other.id and self.case_id == other.case_id and self.status_id == other.status_id and self.defects == other.defects and self.full_info == other.full_info

@@ -6,7 +6,7 @@ from path_constants import CONFIGS_DIR_PATH
 
 
 class CacheConfigReader:
-    def __init__(self):
+    def __init__(self):  # pragma: no cover
         with open(os.path.join(CONFIGS_DIR_PATH, "cache-config.yaml"),
                   "r") as stream:
             try:
