@@ -2,7 +2,6 @@ import itertools
 
 import requests
 
-from lib.helpers.file_helper import write_list_of_dicts_to_file
 from lib.helpers.test_rail_config_reader import TestRailConfigReader
 from lib.test_rail_objects.test_case import TestCase
 from lib.test_rail_objects.test_in_run import TestInRun
@@ -16,7 +15,6 @@ class ApiRequests:  # pylint: disable=too-many-instance-attributes
             self.__test_rail_config.user, self.__test_rail_config.api_key)
         self.__cases = None
         self.__runs = None
-        self.__tests_with_defects_list: list[TestInRun] = []
         self.__list_with_all_tests_results: list[TestInRun] = []
         self.__failed_tests_list: list[TestInRun] = []
         self.__request_timeout_time = 5
@@ -24,18 +22,25 @@ class ApiRequests:  # pylint: disable=too-many-instance-attributes
     @property
     def cases(self) -> list[TestCase]:
         if not self.__cases:
-            self.__cases = self._get_cases()
+            self._write_network_logs("Getting information about all test cases...")
+            cases_list: list[TestCase] = self._get_response_about_all_test_cases()
+            self.__cases = [case for case in cases_list if not case.is_deleted]
+
         return self.__cases
 
     @property
     def runs(self) -> list[TestRun]:
         if not self.__runs:
-            self.__runs = self._get_runs()
+            self._write_network_logs("Getting information about all test runs...")
+            self.__runs = self._get_response_about_all_test_runs()
         return self.__runs
 
     def get_test_results_from_all_runs(self) -> list[TestInRun]:
         if not self.__list_with_all_tests_results:
-            self.__list_with_all_tests_results = self._get_test_results_from_all_test_runs()
+            self._write_network_logs(f"Getting available information about tests from {len(self.runs)} test runs")
+            # get one giant list of all tests results from multiple lists
+            self.__list_with_all_tests_results = self._get_test_runs_results()
+
         return self.__list_with_all_tests_results
 
     @property
@@ -46,11 +51,6 @@ class ApiRequests:  # pylint: disable=too-many-instance-attributes
         return self.__failed_tests_list
 
     def get_failed_tests_defects_list(self, failed_tests_ids_list: list[int]) -> list[TestInRun]:
-        self.__tests_with_defects_list = self._get_failed_test_results(failed_tests_ids_list)
-
-        return self.__tests_with_defects_list
-
-    def _get_failed_test_results(self, failed_tests_ids_list: list[int]) -> list[TestInRun]:
         test_results_list: list[TestInRun] = []
         for test_id in failed_tests_ids_list:
             failed_test_results = self._get_failed_test_results_response(test_id)
@@ -90,25 +90,11 @@ class ApiRequests:  # pylint: disable=too-many-instance-attributes
 
         return failed_tests_list
 
-    def _get_test_results_from_all_test_runs(self) -> list[TestInRun]:  # pragma: no cover
-        self._write_network_logs(f"Getting available information about tests from {len(self.runs)} test runs")
-        # get one giant list of all tests results from multiple lists
-        all_tests_results_list: list[TestInRun] = self._get_test_runs_results()
-
-        return all_tests_results_list
-
     def _get_test_runs_results(self) -> list[TestInRun]:  # pragma: no cover
         list_with_test_runs_results_lists: list[list[TestInRun]] = [self._get_tests_in_run(run.id) for run in
                                                                     self.runs]
 
         return list(itertools.chain.from_iterable(list_with_test_runs_results_lists))
-
-    def _get_cases(self) -> list[TestCase]:  # pragma: no cover
-        self._write_network_logs("Getting information about all test cases...")
-        cases_list: list[TestCase] = self._get_response_about_all_test_cases()
-        test_cases_list = [case for case in cases_list if not case.is_deleted]
-
-        return test_cases_list
 
     def _get_response_about_all_test_cases(self) -> list[TestCase]:  # pragma: no cover
         response = requests.get(
@@ -118,12 +104,6 @@ class ApiRequests:  # pylint: disable=too-many-instance-attributes
 
         self._write_network_logs("Request to get cases was sent and received")
         return [TestCase(case) for case in response.json()]
-
-    def _get_runs(self) -> list[TestRun]:  # pragma: no cover
-        self._write_network_logs("Getting information about all test runs...")
-        test_runs_list: list[TestRun] = self._get_response_about_all_test_runs()
-
-        return test_runs_list
 
     def _get_response_about_all_test_runs(self) -> list[TestRun]:
         response = requests.get(
