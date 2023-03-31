@@ -2,8 +2,9 @@ from lib.helpers.test_rail_config_reader import TestRailConfigReader
 
 
 class TestCase:
-    def __init__(self, resp_object: dict[str, int or str]):
+    def __init__(self, test_rail_config_reader: TestRailConfigReader, resp_object: dict[str, int or str]):
         self.__info = resp_object
+        self.__test_rail_config_reader = test_rail_config_reader
 
     @property
     def id(self) -> int or None:
@@ -19,9 +20,7 @@ class TestCase:
 
     @property
     def link(self) -> str:
-        test_rail_config = TestRailConfigReader()
-
-        return f"{test_rail_config.server_address}/index.php?/cases/view/{self.id}"
+        return f"{self.__test_rail_config_reader.server_address}/index.php?/cases/view/{self.id}"
 
     @property
     def full_info(self) -> dict[str, int or str]:

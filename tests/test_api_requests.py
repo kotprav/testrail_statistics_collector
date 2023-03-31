@@ -1,17 +1,34 @@
 import pytest
+from pytest_mock import MockerFixture
 
 from lib.api_requests import ApiRequests
+from lib.helpers.test_rail_config_reader import TestRailConfigReader
 from lib.test_rail_objects.test_case import TestCase
 from lib.test_rail_objects.test_in_run import TestInRun
 from lib.test_rail_objects.test_run import TestRun
 
 
 @pytest.fixture
-def api_requests() -> ApiRequests:
-    return ApiRequests()
+def test_rail_config_reader_mock(mocker: MockerFixture) -> TestRailConfigReader:
+    mocked_test_rail_config_reader = TestRailConfigReader()
+
+    authentication_info = {"authentication": {
+        "user": "user@something.com", "api_key": "some_api_key"}, "server_address": "https://testrail.something.com",
+        "api_address": "https://testrail.something.com/index.php?/api/v2", "project_id": "123", "suite_id": "1234"}
+
+    mocker.patch.object(mocked_test_rail_config_reader, "_get_config", return_value=authentication_info)
+
+    return mocked_test_rail_config_reader
 
 
-def test_cases_are_not_empty(api_requests, mocker):
+@pytest.fixture
+def api_requests(test_rail_config_reader_mock: TestRailConfigReader) -> ApiRequests:
+    api_requests = ApiRequests(test_rail_config_reader_mock)
+
+    return api_requests
+
+
+def test_cases_are_not_empty(test_rail_config_reader_mock, api_requests, mocker: MockerFixture):
     first_test_case_info = {'id': 1, 'title': 'Happy Test Case #1', 'section_id': 2, 'template_id': 3,
                             'type_id': 4, 'priority_id': 5, 'milestone_id': None, 'refs': None, 'created_by': 6,
                             'created_on': 1632745653, 'updated_by': 7, 'updated_on': 1642690096, 'estimate': None,
@@ -28,7 +45,8 @@ def test_cases_are_not_empty(api_requests, mocker):
                              'updated_by': 7, 'updated_on': 1670314544, 'estimate': None, 'estimate_forecast': None,
                              'suite_id': 8, 'display_order': 9, 'is_deleted': 0}
 
-    return_value = [TestCase(first_test_case_info), TestCase(second_test_case_info)]
+    return_value = [TestCase(test_rail_config_reader_mock, first_test_case_info),
+                    TestCase(test_rail_config_reader_mock, second_test_case_info)]
 
     mocker.patch.object(api_requests, "_get_response_about_all_test_cases", return_value=return_value)
     cases = api_requests.cases
@@ -99,7 +117,7 @@ def test_runs_are_empty_when_test_rail_req_returned_nothing(api_requests, mocker
     assert len(api_requests.runs) == 0
 
 
-def test_results_from_all_runs_are_not_empty(api_requests, mocker):
+def test_results_from_all_runs_are_not_empty(api_requests, mocker: MockerFixture):
     first_test_info = {'id': 111111111, 'case_id': 333333333, 'status_id': 5, 'defects': ["JIRA-1234"]}
     second_test_info = {'id': 222222222, 'case_id': 444444444, 'status_id': 6, 'defects': []}
 
