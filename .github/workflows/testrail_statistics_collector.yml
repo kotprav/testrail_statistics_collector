@@ -22,5 +22,6 @@ jobs:
           pipenv install --dev
           pipenv run pylint *.py
       - name: Run coverage
+        run: |
           pipenv install --dev
           pipenv run coverage run -m pytest && coverage report -m
