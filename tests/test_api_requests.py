@@ -1,17 +1,34 @@
 import pytest
+from pytest_mock import MockerFixture
 
 from lib.api_requests import ApiRequests
+from lib.helpers.test_rail_config_reader import TestRailConfigReader
 from lib.test_rail_objects.test_case import TestCase
 from lib.test_rail_objects.test_in_run import TestInRun
 from lib.test_rail_objects.test_run import TestRun
 
 
 @pytest.fixture
-def api_requests() -> ApiRequests:
-    return ApiRequests()
+def test_rail_config_reader_mock(mocker: MockerFixture) -> TestRailConfigReader:
+    mocked_test_rail_config_reader = TestRailConfigReader()
+
+    authentication_info = {"authentication": {
+        "user": "user@something.com", "api_key": "some_api_key"}, "server_address": "https://testrail.something.com",
+        "api_address": "https://testrail.something.com/index.php?/api/v2", "project_id": "123", "suite_id": "1234"}
+
+    mocker.patch.object(mocked_test_rail_config_reader, "_get_config", return_value=authentication_info)
+
+    return mocked_test_rail_config_reader
 
 
-def test_cases_are_not_empty(api_requests, mocker):
+@pytest.fixture
+def api_requests(test_rail_config_reader_mock: TestRailConfigReader) -> ApiRequests:
+    api_requests = ApiRequests(test_rail_config_reader_mock)
+
+    return api_requests
+
+
+def test_cases_are_not_empty(test_rail_config_reader_mock, api_requests, mocker: MockerFixture):
     first_test_case_info = {'id': 1, 'title': 'Happy Test Case #1', 'section_id': 2, 'template_id': 3,
                             'type_id': 4, 'priority_id': 5, 'milestone_id': None, 'refs': None, 'created_by': 6,
                             'created_on': 1632745653, 'updated_by': 7, 'updated_on': 1642690096, 'estimate': None,
@@ -28,7 +45,8 @@ def test_cases_are_not_empty(api_requests, mocker):
                              'updated_by': 7, 'updated_on': 1670314544, 'estimate': None, 'estimate_forecast': None,
                              'suite_id': 8, 'display_order': 9, 'is_deleted': 0}
 
-    return_value = [TestCase(first_test_case_info), TestCase(second_test_case_info)]
+    return_value = [TestCase(test_rail_config_reader_mock, first_test_case_info),
+                    TestCase(test_rail_config_reader_mock, second_test_case_info)]
 
     mocker.patch.object(api_requests, "_get_response_about_all_test_cases", return_value=return_value)
     cases = api_requests.cases
@@ -57,28 +75,8 @@ def test_cases_are_empty_when_test_rail_req_returned_nothing(api_requests, mocke
 
 
 def test_runs_are_not_empty(api_requests, mocker):
-    first_run_info = {'id': 1, 'suite_id': 2, 'name': 'Test Run #1', 'description': None, 'milestone_id': 1,
-                      'assignedto_id': None, 'include_all': False, 'is_completed': False, 'completed_on': None,
-                      'config': None, 'config_ids': [], 'passed_count': 0, 'blocked_count': 0, 'untested_count': 3,
-                      'retest_count': 0, 'failed_count': 0, 'custom_status1_count': 0, 'custom_status2_count': 0,
-                      'custom_status3_count': 0, 'custom_status4_count': 0, 'custom_status5_count': 0,
-                      'custom_status6_count': 0, 'custom_status7_count': 0, 'project_id': 1, 'plan_id': None,
-                      'created_on': 1678963570, 'updated_on': 1678963570, 'refs': 'JIRA-1111', 'created_by': 1,
-                      'url': 'https://testrail.hello.com/index.php?/runs/view/1'}
-
-    second_run_info = {'id': 2, 'suite_id': 2, 'name': 'Test Run #2',
-                       'description': None, 'milestone_id': 3, 'assignedto_id': None, 'include_all': False,
-                       'is_completed': False,
-                       'completed_on': None, 'config': None, 'config_ids': [], 'passed_count': 0, 'blocked_count': 0,
-                       'untested_count': 4, 'retest_count': 0, 'failed_count': 0, 'custom_status1_count': 0,
-                       'custom_status2_count': 0, 'custom_status3_count': 0, 'custom_status4_count': 0,
-                       'custom_status5_count': 0,
-                       'custom_status6_count': 0, 'custom_status7_count': 0, 'project_id': 5, 'plan_id': None,
-                       'created_on': 1678963301, 'updated_on': 1678963301, 'refs': 'JIRA-2222', 'created_by': 3,
-                       'url': 'https://testrail.hello.com/index.php?/runs/view/2'}
-
-    return_value = [TestRun(first_run_info), TestRun(second_run_info)]
-    mocker.patch.object(api_requests, "_get_response_about_all_test_runs", return_value=return_value)
+    response_about_all_test_runs = _get_valid_test_runs_list()
+    mocker.patch.object(api_requests, "_get_response_about_all_test_runs", return_value=response_about_all_test_runs)
 
     runs = api_requests.runs
     assert len(runs) == 2
@@ -99,10 +97,12 @@ def test_runs_are_empty_when_test_rail_req_returned_nothing(api_requests, mocker
     assert len(api_requests.runs) == 0
 
 
-def test_results_from_all_runs_are_not_empty(api_requests, mocker):
+def test_results_from_all_runs_are_not_empty(api_requests, mocker: MockerFixture):
+    response_about_all_test_runs = _get_valid_test_runs_list()
+    mocker.patch.object(api_requests, "_get_response_about_all_test_runs", return_value=response_about_all_test_runs)
+
     first_test_info = {'id': 111111111, 'case_id': 333333333, 'status_id': 5, 'defects': ["JIRA-1234"]}
     second_test_info = {'id': 222222222, 'case_id': 444444444, 'status_id': 6, 'defects': []}
-
     return_value: list[TestInRun] = [TestInRun(first_test_info), TestInRun(second_test_info)]
     mocker.patch.object(api_requests, "_get_test_runs_results", return_value=return_value)
 
@@ -127,6 +127,9 @@ def test_results_from_all_runs_are_not_empty(api_requests, mocker):
 
 @pytest.mark.parametrize("return_value", [[]])
 def test_results_from_all_runs_are_empty_when_test_rail_req_returned_nothing(api_requests, mocker, return_value):
+    response_about_all_test_runs = _get_valid_test_runs_list()
+    mocker.patch.object(api_requests, "_get_response_about_all_test_runs", return_value=response_about_all_test_runs)
+
     mocker.patch.object(api_requests, "_get_test_runs_results", return_value=return_value)
 
     assert len(api_requests.get_test_results_from_all_runs()) == 0
@@ -210,3 +213,27 @@ def test_get_failed_tests_defects_list_is_empty_when_no_results_returned(api_req
                         return_value=[])
 
     assert len(api_requests.get_failed_tests_defects_list([])) == 0
+
+
+def _get_valid_test_runs_list() -> [TestRun]:
+    first_run_info = {'id': 1, 'suite_id': 2, 'name': 'Test Run #1', 'description': None, 'milestone_id': 1,
+                      'assignedto_id': None, 'include_all': False, 'is_completed': False, 'completed_on': None,
+                      'config': None, 'config_ids': [], 'passed_count': 0, 'blocked_count': 0, 'untested_count': 3,
+                      'retest_count': 0, 'failed_count': 0, 'custom_status1_count': 0, 'custom_status2_count': 0,
+                      'custom_status3_count': 0, 'custom_status4_count': 0, 'custom_status5_count': 0,
+                      'custom_status6_count': 0, 'custom_status7_count': 0, 'project_id': 1, 'plan_id': None,
+                      'created_on': 1678963570, 'updated_on': 1678963570, 'refs': 'JIRA-1111', 'created_by': 1,
+                      'url': 'https://testrail.hello.com/index.php?/runs/view/1'}
+
+    second_run_info = {'id': 2, 'suite_id': 2, 'name': 'Test Run #2',
+                       'description': None, 'milestone_id': 3, 'assignedto_id': None, 'include_all': False,
+                       'is_completed': False,
+                       'completed_on': None, 'config': None, 'config_ids': [], 'passed_count': 0, 'blocked_count': 0,
+                       'untested_count': 4, 'retest_count': 0, 'failed_count': 0, 'custom_status1_count': 0,
+                       'custom_status2_count': 0, 'custom_status3_count': 0, 'custom_status4_count': 0,
+                       'custom_status5_count': 0,
+                       'custom_status6_count': 0, 'custom_status7_count': 0, 'project_id': 5, 'plan_id': None,
+                       'created_on': 1678963301, 'updated_on': 1678963301, 'refs': 'JIRA-2222', 'created_by': 3,
+                       'url': 'https://testrail.hello.com/index.php?/runs/view/2'}
+
+    return [TestRun(first_run_info), TestRun(second_run_info)]

@@ -4,6 +4,7 @@ import os
 
 from lib.api_requests import ApiRequests
 from lib.helpers.file_helper import write_list_of_dicts_to_file, write_list_to_file
+from lib.helpers.test_rail_config_reader import TestRailConfigReader
 from lib.test_rail_objects.test_case import TestCase
 from lib.test_rail_objects.test_in_run import TestInRun
 from lib.test_rail_objects.test_in_run_with_case_info import TestInRunWithCaseInfo
@@ -12,7 +13,7 @@ from path_constants import OUTPUT_FILES_DIR_PATH
 
 class ToolApi:
     def __init__(self):
-        self.__api_requests = ApiRequests()
+        self.__api_requests = ApiRequests(TestRailConfigReader())
 
     def save_not_executed_cases_list(self):
         print("Getting never executed test cases...")

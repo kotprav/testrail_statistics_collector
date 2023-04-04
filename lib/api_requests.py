@@ -8,9 +8,9 @@ from lib.test_rail_objects.test_in_run import TestInRun
 from lib.test_rail_objects.test_run import TestRun
 
 
-class ApiRequests:  # pylint: disable=too-many-instance-attributes
-    def __init__(self):
-        self.__test_rail_config = TestRailConfigReader()
+class ApiRequests:
+    def __init__(self, test_rail_config: TestRailConfigReader):
+        self.__test_rail_config = test_rail_config
         self.__headers, self.__auth = {'Content-Type': 'application/json'}, (
             self.__test_rail_config.user, self.__test_rail_config.api_key)
         self.__cases = None
@@ -103,7 +103,7 @@ class ApiRequests:  # pylint: disable=too-many-instance-attributes
             auth=self.__auth, timeout=self.__request_timeout_time)
 
         self._write_network_logs("Request to get cases was sent and received")
-        return [TestCase(case) for case in response.json()]
+        return [TestCase(self.__test_rail_config, case) for case in response.json()]
 
     def _get_response_about_all_test_runs(self) -> list[TestRun]:
         response = requests.get(
