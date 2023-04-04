@@ -16,7 +16,8 @@ jobs:
       - name: Run tests
         run: |
           pipenv install --dev
-          pipenv run pytest
+          pipenv run coverage
+#          pipenv run pytest
       - name: Run linter
         run: |
           pipenv install --dev
