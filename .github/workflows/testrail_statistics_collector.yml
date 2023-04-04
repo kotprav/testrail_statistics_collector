@@ -16,9 +16,11 @@ jobs:
       - name: Run tests
         run: |
           pipenv install --dev
-          pipenv run coverage
-#          pipenv run pytest
+          pipenv run pytest
       - name: Run linter
         run: |
           pipenv install --dev
           pipenv run pylint *.py
+      - name: Run coverage
+          pipenv install --dev
+          pipenv run coverage run -m pytest && coverage report -m
