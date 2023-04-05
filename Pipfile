@@ -8,6 +8,7 @@ pyyaml = "*"
 requests = "*"
 pytest-mock = "*"
 pytest-cov = "*"
+pre-commit = "*"
 
 [dev-packages]
 pytest = "*"
