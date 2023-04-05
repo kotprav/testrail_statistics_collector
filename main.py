@@ -19,4 +19,3 @@ if GET_MOST_FAILING_TEST_CASES:
 
 if GET_MOST_BUGGIEST_TEST_CASES:
     api_requests.save_the_buggiest_tests()
-
