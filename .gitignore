@@ -1,4 +1,5 @@
 configs/test-rail-config.yaml
 output_files/
+venv/
 .idea/
 /.coverage
