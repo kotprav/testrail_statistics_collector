@@ -220,4 +220,4 @@ class ToolApi:
 
     @staticmethod
     def _write_result_logs(file_name: str):
-        print(f"૮₍ ˶ᵔ ᵕ ᵔ˶ ₎ა Finished! Please check output_files/{file_name} file")
+        print(f"૮₍ ˶ᵔ ᵕ ᵔ˶ ₎ა Finished! Please check {file_name} file")
