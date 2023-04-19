@@ -5,7 +5,7 @@ from lib.tool_api import ToolApi
 
 GET_NEVER_EXECUTED_TEST_CASES = True
 GET_THE_MOST_FAILING_TEST_CASES = True
-GET_THE_BUGGIEST_TEST_CASES = True
+GET_THE_MOST_IRRITATING_BUGS = True
 
 api_requests = ToolApi()
 
@@ -17,5 +17,5 @@ if GET_NEVER_EXECUTED_TEST_CASES:
 if GET_THE_MOST_FAILING_TEST_CASES:
     api_requests.save_most_failing_test_cases()
 
-if GET_THE_BUGGIEST_TEST_CASES:
+if GET_THE_MOST_IRRITATING_BUGS:
     api_requests.save_the_buggiest_tests()
