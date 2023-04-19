@@ -1,5 +1,4 @@
 import collections
-import itertools
 import os
 
 from lib.api_requests import ApiRequests
@@ -41,8 +40,6 @@ class ToolApi:
         print("Getting the buggiest tests...")
         tests_with_defects_list: list[TestInRun] = self._get_tests_with_defects_list()
 
-        # merge failed tests with bugs list with information about test cases
-        # example result: {'id': 123, 'case_id': 1234, 'status_id': 5, 'test_id': 12345, 'defects': ['JIRA-123']}
         failed_tests_with_bugs_list: list[TestInRun] = self._get_failed_tests_with_bugs_list(
             tests_with_defects_list)
 
@@ -89,9 +86,11 @@ class ToolApi:
         output_file_name: str = os.path.join(OUTPUT_FILES_DIR_PATH, "the_worst_bugs.txt")
 
         write_list_to_file(output_file_name,
-                           [f"Defect {test_results['defect']} caused bugs {test_results['cases_with_defect']}\n\n\n" for
-                            test_results in
-                            bug_with_test_cases])
+                           [
+                               f"Defect {test_results['defect']} affected test case {test_results['cases_with_defect']}\n\n\n"
+                               for
+                               test_results in
+                               bug_with_test_cases])
 
         self._write_result_logs(output_file_name)
 
@@ -155,7 +154,8 @@ class ToolApi:
                                                                      self.__api_requests.failed_tests)
 
     @staticmethod
-    def _get_intersected_failed_tests_with_bugs_list(bigger_list: list[TestInRun], smaller_list: list[TestInRun]):
+    def _get_intersected_failed_tests_with_bugs_list(bigger_list: list[TestInRun], smaller_list: list[TestInRun]) -> \
+            list[TestInRun]:
         failed_tests_with_bugs_list: list[list[TestInRun]] = []
 
         for smaller_list_item in smaller_list:
@@ -180,10 +180,18 @@ class ToolApi:
 
     @staticmethod
     def _get_all_defects_list(failed_tests_with_at_least_one_bug_list: list[TestInRun]) -> list[str]:
-        all_defects_list: list[list[str]] = [failed_test.defects for failed_test in
-                                             failed_tests_with_at_least_one_bug_list]
+        all_defects_list: list[list[str] or str] = [failed_test.defects for failed_test in
+                                                    failed_tests_with_at_least_one_bug_list]
 
-        return list(itertools.chain.from_iterable(all_defects_list))
+        one_big_list: list[str] = []
+        for defect in all_defects_list:
+            if type(defect) == list:
+                for sub_defect in defect:
+                    one_big_list.append(sub_defect)
+            else:
+                one_big_list.append(defect)
+
+        return one_big_list
 
     @staticmethod
     def _get_most_common_defects(all_defects_list: list[str]) -> list[tuple[str, int]]:
@@ -220,4 +228,4 @@ class ToolApi:
 
     @staticmethod
     def _write_result_logs(file_name: str):
-        print(f"૮₍ ˶ᵔ ᵕ ᵔ˶ ₎ა Finished! Please check output_files/{file_name} file")
+        print(f"૮₍ ˶ᵔ ᵕ ᵔ˶ ₎ა Finished! Please check {file_name} file")
